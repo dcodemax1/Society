@@ -8,11 +8,6 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-// CORS configuration - allow multiple frontend ports during development
-// const allowedOrigins = [
- 
-// ];
-
 app.use(
   cors({
     origin: "*",

@@ -77,18 +77,12 @@ export const handleSubmit = async (
 
   const submissionData = {
     ...formData,
-    memberId, // Include generated member ID
+    memberId,
     submitted_at: new Date().toISOString(),
   };
 
-  console.log("🔵 Attempting to submit member form...");
-  console.log("📦 Form data (camelCase):", submissionData);
-
   try {
-    // Attempt to submit to API
     const result = await submitMemberForm(submissionData);
-
-    console.log("✅ API Response:", result);
 
     if (result.success) {
       showMessage("Form submitted successfully.", "success");
@@ -103,14 +97,9 @@ export const handleSubmit = async (
       throw new Error(result.message || "Submission failed");
     }
   } catch (err) {
-    console.error("❌ API Error:", err);
-    // Fallback: Save to global variable (preserves File objects) and show success page
     try {
-      // Store the full formData with File objects in global variable
       window.lastSubmittedFormData = submissionData;
-      console.log("✅ Saved formData to global variable (offline fallback)");
 
-      // Also save non-file data to localStorage for persistence
       const formDataCopy = { ...submissionData };
       if (formDataCopy.passportPhoto) delete formDataCopy.passportPhoto;
       if (formDataCopy.aadhaarFrontFile) delete formDataCopy.aadhaarFrontFile;

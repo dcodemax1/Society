@@ -1,4 +1,20 @@
-// src/utils/normalizeMember.js
+// Helper function to convert DD-MM-YYYY format to YYYY-MM-DD format
+const convertDateFormat = (dateStr) => {
+  if (!dateStr) return null;
+
+  // If already in YYYY-MM-DD format, return as is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+
+  // Convert from DD-MM-YYYY to YYYY-MM-DD
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    const parts = dateStr.split("-");
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+
+  return dateStr;
+};
 
 export const normalizeMemberInput = (data) => {
   return {
@@ -11,7 +27,7 @@ export const normalizeMemberInput = (data) => {
     fatherName: data.father_name,
     motherName: data.mother_name,
     gender: data.gender,
-    dob: data.dob,
+    dob: convertDateFormat(data.dob),
 
     mobile: data.mobile,
     whatsapp: data.whatsapp || data.whatsapp_number,
@@ -58,14 +74,14 @@ export const normalizeMemberInput = (data) => {
     nomineeName: data.nominee_name,
     nomineeRelation: data.nominee_relation,
     nomineeRelationOther: data.nominee_relation_other,
-    nomineeDob:
+    nomineeDob: convertDateFormat(
       data.nominee_dob ||
-      (data.nominee_dob_day && data.nominee_dob_month && data.nominee_dob_year
-        ? `${data.nominee_dob_year}-${String(data.nominee_dob_month).padStart(
-            2,
-            "0"
-          )}-${String(data.nominee_dob_day).padStart(2, "0")}`
-        : null),
+        (data.nominee_dob_day && data.nominee_dob_month && data.nominee_dob_year
+          ? `${String(data.nominee_dob_day).padStart(2, "0")}-${String(
+              data.nominee_dob_month
+            ).padStart(2, "0")}-${data.nominee_dob_year}`
+          : null)
+    ),
     nomineeGuardian: data.nominee_guardian,
     nomineeAddress: data.nominee_address,
     nomineeAadhaar: data.nominee_aadhaar,
@@ -82,7 +98,7 @@ export const normalizeMemberInput = (data) => {
     introducerMobile: data.introducer_mobile || data.referral_member_mobile,
 
     declarationPlace: data.declaration_place,
-    declarationDate: data.declaration_date,
+    declarationDate: convertDateFormat(data.declaration_date),
     memberSignaturePath: data.member_signature_path,
     introducerSignaturePath: data.introducer_signature_path,
 

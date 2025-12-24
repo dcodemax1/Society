@@ -26,10 +26,6 @@ function MemberForm() {
    */
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    // Log only file uploads for debugging
-    if (type === "file" || value instanceof File) {
-      console.log("📁 File uploaded:", { name, isFile: value instanceof File });
-    }
     setFormData((prev) => ({
       ...prev,
       [name]: type === "radio" ? (checked ? value : prev[name]) : value,
@@ -139,7 +135,11 @@ function MemberForm() {
               />
 
               {/* Progress Bar */}
-              <ProgressBar current={currentStep} total={TOTAL_STEPS} percentage={percentage} />
+              <ProgressBar
+                current={currentStep}
+                total={TOTAL_STEPS}
+                percentage={percentage}
+              />
 
               {/* Step Indicators: Circles for all steps */}
               <StepIndicators steps={FORM_STEPS} currentStep={currentStep} />

@@ -1,39 +1,18 @@
-// src/services/member.service.js
 import pool from "../../config/db.js";
 import { generateMemberId } from "../../utils/memberId.js";
 
-/**
- * Create a new member
- * Controller is responsible for normalization; this service only:
- *  - generates member_id using mobile + state code
- *  - inserts into members table with exact columns order matching the DB
- */
 export const saveMember = async (data) => {
-  // Use provided member_id or generate one using mobile + state code (perm_state first, fallback to office_state)
   let memberId =
     data.memberId ||
     generateMemberId(data.mobile, data.permState || data.officeState);
 
-  // Ensure member_id is NEVER NULL (it's a PRIMARY KEY)
   if (!memberId || memberId === "XX" || memberId === "0000000000XX") {
     throw new Error(
-      "❌ CRITICAL: member_id cannot be NULL or invalid. Generated ID: " +
+      " CRITICAL: member_id cannot be NULL or invalid. Generated ID: " +
         memberId
     );
   }
 
-  console.log("💾 Saving member with memberId:", memberId);
-  console.log("📊 Data received in saveMember:", {
-    memberId: data.memberId,
-    mobile: data.mobile,
-    permState: data.permState,
-    officeState: data.officeState,
-    generatedId: memberId,
-    fullName: data.fullName,
-    email: data.email,
-  });
-
-  // exact columns in the members table (snake_case) — must match DB
   const columns = [
     "member_id",
     "membership_type",
@@ -110,9 +89,7 @@ export const saveMember = async (data) => {
     ", "
   )}) VALUES (${placeholders})`;
 
-  // params must be in same order as columns
   const params = [
-    // member_id
     memberId,
 
     // membership section
@@ -205,7 +182,6 @@ export const saveMember = async (data) => {
     data.status ?? "PENDING",
   ];
 
-  // sanity check — fail fast if mismatch (helpful in development)
   if (placeholders.split(",").length !== params.length) {
     throw new Error(
       `PARAM/PLACEHOLDER MISMATCH: ${params.length} params vs ${
@@ -214,24 +190,11 @@ export const saveMember = async (data) => {
     );
   }
 
-  console.log("� Sample params being inserted:");
-  console.log("  params[0] (memberId):", params[0]);
-  console.log("  params[3] (fullName):", params[3]);
-  console.log("  params[8] (mobile):", params[8]);
-  console.log("  params[11] (email):", params[11]);
-  console.log("  params.length:", params.length);
-
-  console.log("�🔄 Executing INSERT with memberId:", memberId);
-
   try {
     const result = await pool.query(sql, params);
-    console.log("✅ INSERT successful for memberId:", memberId);
-    console.log("📍 Insert result:", result);
+    console.log("INSERT successful, result:", result);
   } catch (insertErr) {
-    console.error("❌ INSERT FAILED for memberId:", memberId);
-    console.error("🔴 SQL Error:", insertErr.message);
-    console.error("🔴 SQL Code:", insertErr.code);
-    console.error("🔴 Full Error:", insertErr);
+    console.error("INSERT failed:", insertErr.message);
     throw insertErr;
   }
 
@@ -239,15 +202,6 @@ export const saveMember = async (data) => {
     "SELECT * FROM members WHERE member_id = ? LIMIT 1",
     [memberId]
   );
-
-  if (rows[0]) {
-    console.log("✅ Verified: member_id saved in database:", rows[0].member_id);
-  } else {
-    console.error(
-      "❌ ERROR: member_id NOT found in database after INSERT:",
-      memberId
-    );
-  }
 
   return rows[0] || null;
 };

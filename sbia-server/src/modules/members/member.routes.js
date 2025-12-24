@@ -1,4 +1,4 @@
-// src/routes/member.routes.js
+
 import { Router } from "express";
 import {
   submitMember,

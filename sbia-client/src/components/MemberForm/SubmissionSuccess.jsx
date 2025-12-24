@@ -15,17 +15,8 @@ function SubmissionSuccess({ formData }) {
 
   // Save form data to global variable when component mounts (preserves File objects)
   useEffect(() => {
-    // Store the entire formData object in a global variable without serializing
-    // This preserves File objects like passportPhoto
-    console.log("🔵 SubmissionSuccess mounted - formData:", formData);
-    console.log("🔵 passportPhoto:", formData.passportPhoto);
-
     if (formData && Object.keys(formData).length > 0) {
       window.lastSubmittedFormData = formData;
-      console.log(
-        "✅ Saved formData to global variable with passportPhoto:",
-        formData.passportPhoto
-      );
     }
   }, []); // Empty dependency array - only run once on mount
 
@@ -94,12 +85,8 @@ function SubmissionSuccess({ formData }) {
       delete formDataForStorage.nomineeAadhaarBackFile;
 
       localStorage.setItem("bankFormData", JSON.stringify(formDataForStorage));
-
-      console.log("✅ Stored bankFormData with file base64 strings");
-      // Open bank form in new tab
       window.open("/bank-form", "_blank");
     } catch (err) {
-      console.error("Error converting files:", err);
       alert("Error processing files. Please try again.");
     }
   };

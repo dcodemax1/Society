@@ -1,5 +1,4 @@
 import pool from "../../config/db.js";
-// import crypto from "crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendOTP } from "../../utils/mailer.js";

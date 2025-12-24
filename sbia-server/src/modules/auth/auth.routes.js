@@ -15,7 +15,7 @@ router.post("/request-otp", requestOTP);
 router.post("/verify-otp", confirmOTP);
 router.post("/set-password", setUserPassword);
 router.post("/login", login);
-router.post("/refresh", refresh); // client can call this to renew access token
+router.post("/refresh", refresh); 
 router.post("/logout", logout);
 router.get("/me", protect, me);
 
