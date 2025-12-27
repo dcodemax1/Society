@@ -4,17 +4,41 @@
  * File upload with type validation, size limits, image preview, and delete functionality
  */
 
-import React, { useState, useImperativeHandle, forwardRef } from "react";
+import React, {
+  useState,
+  useImperativeHandle,
+  forwardRef,
+  useEffect,
+} from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 const DocumentsUpload = forwardRef(function DocumentsUpload(
-  { formData, onChange },
+  { formData, onChange, modalErrors = {} },
   ref
 ) {
   const [documentError, setDocumentError] = useState("");
   const [typeError, setTypeError] = useState("");
+  const [bankDocumentPreviewUrl, setBankDocumentPreviewUrl] = useState(null);
 
   const maxSize = 2 * 1024 * 1024; // 2MB
+
+  // Create and manage bank document preview URL
+  useEffect(() => {
+    if (formData.bankDocument_file instanceof File) {
+      try {
+        const url = URL.createObjectURL(formData.bankDocument_file);
+        setBankDocumentPreviewUrl(url);
+        // Cleanup function
+        return () => {
+          URL.revokeObjectURL(url);
+        };
+      } catch (error) {
+        console.error("Failed to create bank document preview URL:", error);
+      }
+    } else {
+      setBankDocumentPreviewUrl(null);
+    }
+  }, [formData.bankDocument_file]);
 
   // Expose validation to parent component
   useImperativeHandle(ref, () => ({
@@ -91,6 +115,10 @@ const DocumentsUpload = forwardRef(function DocumentsUpload(
   };
 
   const handleDelete = (fieldName, setError) => {
+    if (fieldName === "bankDocument" && bankDocumentPreviewUrl) {
+      URL.revokeObjectURL(bankDocumentPreviewUrl);
+      setBankDocumentPreviewUrl(null);
+    }
     setError("");
     onChange({
       target: {
@@ -107,8 +135,10 @@ const DocumentsUpload = forwardRef(function DocumentsUpload(
   };
 
   const getPreviewUrl = (fieldName) => {
-    const file = formData[`${fieldName}_file`];
-    return file ? URL.createObjectURL(file) : null;
+    if (fieldName === "bankDocument") {
+      return bankDocumentPreviewUrl;
+    }
+    return null;
   };
 
   const isImage = (fieldName) => {
@@ -226,13 +256,15 @@ const DocumentsUpload = forwardRef(function DocumentsUpload(
                 ⚠️ {documentError}
               </p>
             )}
-            {!formData.bankDocument &&
-              !documentError &&
-              formData.bankDocumentType && (
-                <p className="text-xs text-red-500 mt-1">
-                  {formData.bankDocumentType} is required
-                </p>
-              )}
+            {(modalErrors.bankDocument ||
+              (!formData.bankDocument &&
+                !documentError &&
+                formData.bankDocumentType)) && (
+              <p className="text-xs text-red-500 mt-1">
+                {modalErrors.bankDocument ||
+                  `${formData.bankDocumentType} is required`}
+              </p>
+            )}
           </div>
         )}
       </div>

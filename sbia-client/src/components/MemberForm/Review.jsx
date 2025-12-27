@@ -17,6 +17,7 @@ import { isStepValid } from "./utils/formValidation";
 function Review({ formData, onChange, onEdit }) {
   const [editingSection, setEditingSection] = useState(null);
   const [modalFormErrors, setModalFormErrors] = useState({});
+  const [originalFormData, setOriginalFormData] = useState(null);
 
   const handleAgreeChange = (e) => {
     onChange({ target: { name: "agreedToTerms", value: e.target.checked } });
@@ -47,17 +48,73 @@ function Review({ formData, onChange, onEdit }) {
 
   // Open modal for editing a section
   const openSectionEditor = (sectionName) => {
+    // Store a copy of current formData before editing
+    // For File objects, we need to preserve them separately since JSON.stringify loses them
+    const formDataCopy = {};
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] instanceof File) {
+        // Store File objects directly
+        formDataCopy[key] = formData[key];
+      } else if (formData[key] && typeof formData[key] === "object") {
+        // For other objects, try to copy them
+        try {
+          formDataCopy[key] = JSON.parse(JSON.stringify(formData[key]));
+        } catch {
+          // If JSON serialization fails, keep the reference
+          formDataCopy[key] = formData[key];
+        }
+      } else {
+        // For primitives, just assign directly
+        formDataCopy[key] = formData[key];
+      }
+    });
+    setOriginalFormData(formDataCopy);
     setEditingSection(sectionName);
+    setModalFormErrors({});
   };
 
-  // Close modal without saving
+  // Close modal without saving - restore original values
   const closeSectionEditor = () => {
+    if (originalFormData) {
+      // Restore original formData by triggering onChange for all changed fields
+      const formDataKeys = Object.keys(formData);
+      formDataKeys.forEach((key) => {
+        const currentValue = formData[key];
+        const originalValue = originalFormData[key];
+
+        // For File objects, compare by reference
+        if (currentValue instanceof File || originalValue instanceof File) {
+          if (currentValue !== originalValue) {
+            onChange({
+              target: {
+                name: key,
+                value: originalValue,
+              },
+            });
+          }
+        } else {
+          // For other types, use normal comparison
+          if (currentValue !== originalValue) {
+            onChange({
+              target: {
+                name: key,
+                value: originalValue,
+              },
+            });
+          }
+        }
+      });
+    }
     setEditingSection(null);
+    setOriginalFormData(null);
+    setModalFormErrors({});
   };
 
   // Save section and close modal
   const saveSectionAndClose = () => {
     setEditingSection(null);
+    setOriginalFormData(null);
+    setModalFormErrors({});
   };
 
   const ReviewSection = ({ title, fields, sectionName }) => (
@@ -487,17 +544,13 @@ function Review({ formData, onChange, onEdit }) {
               <h3 className="text-lg font-semibold capitalize">
                 Edit {editingSection.replace(/([A-Z])/g, " $1").trim()}
               </h3>
-              {isModalSectionValid() ? (
-                <button
-                  onClick={closeSectionEditor}
-                  className="text-white hover:bg-green-700 w-8 h-8 flex items-center justify-center rounded transition cursor-pointer"
-                  title="Close"
-                >
-                  ✕
-                </button>
-              ) : (
-                <div className="w-8 h-8"></div>
-              )}
+              <button
+                onClick={closeSectionEditor}
+                className="text-white hover:bg-green-700 w-8 h-8 flex items-center justify-center rounded transition cursor-pointer"
+                title="Close"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Modal Content - Render the appropriate form component with validation */}
@@ -578,12 +631,7 @@ function Review({ formData, onChange, onEdit }) {
             <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 sticky bottom-0 bg-white">
               <button
                 onClick={closeSectionEditor}
-                disabled={!isModalSectionValid()}
-                className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
-                  isModalSectionValid()
-                    ? "border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
-                    : "border border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
-                }`}
+                className="flex-1 px-4 py-2 rounded-md font-medium transition border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
               >
                 Cancel
               </button>

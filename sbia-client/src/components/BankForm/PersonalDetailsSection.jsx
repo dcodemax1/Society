@@ -87,14 +87,34 @@ function PersonalDetailsSection({ formData }) {
                   style={{ minHeight: "200px" }}
                 >
                   <div
-                    className="border-2 border-gray-400 bg-white flex items-center justify-center overflow-hidden"
-                    style={{ width: "160px", height: "200px" }}
+                    style={{
+                      width: "160px",
+                      height: "200px",
+                      border: "2px solid #9ca3af",
+                      backgroundColor: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      position: "relative",
+                      clipPath: "inset(0)",
+                    }}
                   >
                     {photoUrl ? (
                       <img
                         src={photoUrl}
                         alt="Passport Photo"
-                        className="w-full h-full object-cover"
+                        style={{
+                          width: "160px",
+                          height: "200px",
+                          objectFit: "cover",
+                          objectPosition: "center",
+                          display: "block",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                        }}
                       />
                     ) : (
                       <span className="text-gray-400 text-xs text-center px-2">

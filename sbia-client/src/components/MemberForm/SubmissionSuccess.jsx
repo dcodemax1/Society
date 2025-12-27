@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { FaWhatsapp, FaDownload } from "react-icons/fa";
 import jsPDF from "jspdf";
 import IDCardDesign from "./IDCardDesign";
+import { BankForm } from "../BankForm";
+import {
+  generatePDFWithOklchFix,
+  generatePDFBlobWithOklchFix,
+  cropPassportPhoto,
+} from "../../utils/oklchColorFix";
 import { STATE_CODES } from "./config/formConfig";
 
 /**
@@ -12,6 +18,8 @@ import { STATE_CODES } from "./config/formConfig";
  */
 function SubmissionSuccess({ formData }) {
   const navigate = useNavigate();
+  const bankFormRef = useRef(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Save form data to global variable when component mounts (preserves File objects)
   useEffect(() => {
@@ -34,6 +42,16 @@ function SubmissionSuccess({ formData }) {
   // Navigate to Form Details in new tab with membership data
   const handleDownloadPDF = async () => {
     try {
+      // Crop passport photo to exact 160x200px before processing
+      if (formData.passportPhoto) {
+        const croppedPhotoBlob = await cropPassportPhoto(
+          formData.passportPhoto
+        );
+        if (croppedPhotoBlob) {
+          formData.passportPhoto = croppedPhotoBlob;
+        }
+      }
+
       // Convert File objects to base64 for storage
       const formDataForStorage = { ...formData };
 
@@ -91,11 +109,118 @@ function SubmissionSuccess({ formData }) {
     }
   };
 
-  // Share Form Details on WhatsApp
+  // Share Bank Form PDF on WhatsApp
   const handleShareWhatsApp = async () => {
-    const message = `Membership Form Details - Member ID: ${memberId}\n\nMember Name: ${formData.fullName}\nMobile: ${formData.mobile}\n\nPlease review the form details.`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
+    if (!bankFormRef.current) {
+      alert("Form content not found. Please refresh and try again.");
+      return;
+    }
+
+    try {
+      setIsGeneratingPDF(true);
+
+      // Crop passport photo to exact 160x200px before PDF generation
+      if (formData.passportPhoto) {
+        const croppedPhotoBlob = await cropPassportPhoto(
+          formData.passportPhoto
+        );
+        if (croppedPhotoBlob) {
+          formData.passportPhoto = croppedPhotoBlob;
+        }
+      }
+
+      const formDataForStorage = { ...formData };
+
+      // Helper function to convert File to base64
+      const fileToBase64 = (file) => {
+        return new Promise((resolve) => {
+          if (!file) {
+            resolve(null);
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      };
+
+      // Convert all file fields to base64
+      formDataForStorage.passportPhotoBase64 = await fileToBase64(
+        formData.passportPhoto
+      );
+      formDataForStorage.signatureFileBase64 = await fileToBase64(
+        formData.signatureFile
+      );
+      formDataForStorage.aadhaarFrontFileBase64 = await fileToBase64(
+        formData.aadhaarFrontFile
+      );
+      formDataForStorage.aadhaarBackFileBase64 = await fileToBase64(
+        formData.aadhaarBackFile
+      );
+      formDataForStorage.panFileBase64 = await fileToBase64(formData.panFile);
+      formDataForStorage.bankDocumentBase64 = await fileToBase64(
+        formData.bankDocument
+      );
+      formDataForStorage.nomineeAadhaarFrontFileBase64 = await fileToBase64(
+        formData.nomineeAadhaarFrontFile
+      );
+      formDataForStorage.nomineeAadhaarBackFileBase64 = await fileToBase64(
+        formData.nomineeAadhaarBackFile
+      );
+
+      // Remove original File objects
+      delete formDataForStorage.passportPhoto;
+      delete formDataForStorage.signatureFile;
+      delete formDataForStorage.aadhaarFrontFile;
+      delete formDataForStorage.aadhaarBackFile;
+      delete formDataForStorage.panFile;
+      delete formDataForStorage.bankDocument;
+      delete formDataForStorage.nomineeAadhaarFrontFile;
+      delete formDataForStorage.nomineeAadhaarBackFile;
+
+      localStorage.setItem("bankFormData", JSON.stringify(formDataForStorage));
+
+      // Generate PDF blob with oklch color fixes
+      const pdfBlob = await generatePDFBlobWithOklchFix(bankFormRef.current);
+      const pdfFileName = `BankForm-${memberId}.pdf`;
+      const pdfFile = new File([pdfBlob], pdfFileName, {
+        type: "application/pdf",
+      });
+
+      const whatsappMessage = `Bank Form - Member ID: ${memberId}\nName: ${formData.fullName}\n\nPlease review the attached bank form.`;
+      const encodedMessage = encodeURIComponent(whatsappMessage);
+
+      // Check if on mobile device with Web Share API support
+      if (navigator.share && navigator.canShare({ files: [pdfFile] })) {
+        // On mobile: Use Web Share API to send directly to WhatsApp with file
+        try {
+          await navigator.share({
+            title: "Bank Form",
+            text: whatsappMessage,
+            files: [pdfFile],
+          });
+          setIsGeneratingPDF(false);
+          return;
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            console.error("Share failed:", error);
+          }
+        }
+      }
+
+      // On desktop: Open WhatsApp Web with message only (no download)
+      window.open(
+        `https://web.whatsapp.com/send?text=${encodedMessage}`,
+        "_blank"
+      );
+
+      setIsGeneratingPDF(false);
+    } catch (error) {
+      alert(
+        `Error: ${error.message || "Failed to generate PDF"}. Please try again.`
+      );
+      setIsGeneratingPDF(false);
+    }
   };
 
   return (
@@ -146,7 +271,7 @@ function SubmissionSuccess({ formData }) {
         </div>
 
         {/* Download & Share Buttons */}
-        <div className="flex justify-center my-8">
+        <div className="flex justify-center gap-4 my-8 flex-wrap">
           <button
             onClick={handleDownloadPDF}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 sm:py-3 px-4 sm:px-8 rounded-lg flex items-center justify-center gap-2 transition-colors text-xs sm:text-base whitespace-nowrap"
@@ -154,6 +279,21 @@ function SubmissionSuccess({ formData }) {
             <FaDownload className="w-4 sm:w-5 h-4 sm:h-5" />
             View Form Details
           </button>
+          <button
+            onClick={handleShareWhatsApp}
+            disabled={isGeneratingPDF}
+            className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 px-4 sm:px-8 rounded-lg flex items-center justify-center gap-2 transition-colors text-xs sm:text-base whitespace-nowrap"
+          >
+            <FaWhatsapp className="w-4 sm:w-5 h-4 sm:h-5" />
+            {isGeneratingPDF ? "Generating..." : "Share via WhatsApp"}
+          </button>
+        </div>
+
+        {/* Hidden Bank Form for PDF Generation */}
+        <div style={{ display: "none" }}>
+          <div ref={bankFormRef} className="bg-white">
+            <BankForm formData={formData} />
+          </div>
         </div>
 
         {/* Payment Section */}

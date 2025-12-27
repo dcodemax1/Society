@@ -80,12 +80,10 @@ function BankFormPage() {
         setFormData({});
       }
     } else {
-     
       setFormData({});
     }
   }, []);
 
-  
   const handleDownloadPDF = async () => {
     if (!bankFormRef.current) {
       alert("Form content not found. Please refresh and try again.");
@@ -114,7 +112,6 @@ function BankFormPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-       
         <div className="flex justify-end mb-6 pr-4">
           <button
             onClick={handleDownloadPDF}

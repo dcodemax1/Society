@@ -1,10 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 // KYC uploads layout with image preview and delete functionality
 function KYCDetails({ formData, onChange, formErrors = {} }) {
   const [errors, setErrors] = useState({});
+  const [previewUrls, setPreviewUrls] = useState({});
+  const fileInputRefs = useRef({});
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+  // Create preview URLs when files change
+  useEffect(() => {
+    const newPreviewUrls = {};
+
+    Object.keys(formData).forEach((key) => {
+      // Check if the value is a File object
+      // Match both naming conventions: ending with "File" or specific field names
+      const isFileField =
+        (key.endsWith("File") ||
+          key === "passportPhoto" ||
+          key === "bankDocument") &&
+        formData[key] instanceof File;
+
+      if (isFileField && !previewUrls[key]) {
+        try {
+          newPreviewUrls[key] = URL.createObjectURL(formData[key]);
+        } catch (error) {
+          console.error(`Failed to create preview URL for ${key}:`, error);
+        }
+      }
+    });
+
+    if (Object.keys(newPreviewUrls).length > 0) {
+      setPreviewUrls((prev) => ({ ...prev, ...newPreviewUrls }));
+    }
+
+    // Cleanup function to revoke URLs when component unmounts or files are cleared
+    return () => {
+      newPreviewUrls &&
+        Object.values(newPreviewUrls).forEach((url) => {
+          if (url && typeof url === "string") URL.revokeObjectURL(url);
+        });
+    };
+  }, [formData]);
 
   // Helper to validate and handle file selection
   const handleFile = (name, files) => {
@@ -37,6 +74,15 @@ function KYCDetails({ formData, onChange, formErrors = {} }) {
 
   // Helper to delete file
   const handleDeleteFile = (name) => {
+    // Revoke the preview URL if it exists
+    if (previewUrls[name]) {
+      URL.revokeObjectURL(previewUrls[name]);
+      setPreviewUrls((prev) => {
+        const newUrls = { ...prev };
+        delete newUrls[name];
+        return newUrls;
+      });
+    }
     onChange({ target: { name, value: null } });
     setErrors({ ...errors, [name]: "" });
   };
@@ -46,7 +92,7 @@ function KYCDetails({ formData, onChange, formErrors = {} }) {
     const file = formData[fieldName];
     const error = errors[fieldName];
     const formError = formErrors[fieldName];
-    const previewUrl = file ? URL.createObjectURL(file) : null;
+    const previewUrl = previewUrls[fieldName] || null;
 
     return (
       <div>

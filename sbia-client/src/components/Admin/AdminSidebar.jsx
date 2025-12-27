@@ -17,7 +17,7 @@ function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
     {
       icon: <MdPeople size={20} />,
       label: "Member Registration",
-      path: "/member-registration",
+      path: "/member-form",
     },
     {
       icon: <MdNoteAlt size={20} />,

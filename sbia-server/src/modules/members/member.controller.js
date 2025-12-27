@@ -58,13 +58,33 @@ export const getMembers = async (req, res) => {
 
 export const getMemberById = async (req, res) => {
   try {
-    const { member_id } = req.params;
-    const member = await fetchMemberById(member_id);
+    const { id } = req.params;
+    const member = await fetchMemberById(id);
 
     if (!member) return res.status(404).json(error("Member not found"));
 
     return res.json(success("Member fetched", member));
   } catch (err) {
+    console.error("Error fetching member:", err);
     return res.status(500).json(error("Failed to fetch member"));
+  }
+};
+export const getIntroducerDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const member = await fetchMemberById(id);
+
+    if (!member) return res.status(404).json(error("Member not found"));
+
+    // Return introducer details from database fields
+    return res.json(
+      success("Introducer details fetched", {
+        introducerName: member.introducer_name,
+        introducerMemberId: member.introducer_member_id,
+        introducerMobile: member.introducer_mobile,
+      })
+    );
+  } catch (err) {
+    return res.status(500).json(error("Failed to fetch introducer details"));
   }
 };

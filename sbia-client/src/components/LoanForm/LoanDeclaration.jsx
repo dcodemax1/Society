@@ -6,14 +6,9 @@
 
 import React from "react";
 
-function LoanDeclaration({ formData, onChange }) {
+function LoanDeclaration({ formData, onChange, modalErrors = {} }) {
   const handleDeclarationChange = (e) => {
-    onChange({
-      target: {
-        name: "loanDeclarationAccepted",
-        value: e.target.checked,
-      },
-    });
+    onChange(e);
   };
 
   return (
@@ -56,9 +51,11 @@ function LoanDeclaration({ formData, onChange }) {
               I agree to the Loan Terms & Society Rules
             </span>
           </label>
-          {!formData.loanDeclarationAccepted && (
+          {(modalErrors.loanDeclarationAccepted ||
+            !formData.loanDeclarationAccepted) && (
             <p className="text-xs text-red-500 mt-2 ml-8">
-              Please accept the declaration
+              {modalErrors.loanDeclarationAccepted ||
+                "Please accept the declaration"}
             </p>
           )}
         </div>

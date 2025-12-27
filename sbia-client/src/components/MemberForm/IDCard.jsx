@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 /**
  * Member ID Card Component
@@ -8,11 +8,31 @@ import React from "react";
  * - formData: Form data containing member information
  */
 function IDCard({ memberId, formData }) {
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null);
+
   const joiningDate = new Date().toLocaleDateString("en-IN", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+
+  // Create and manage photo preview URL
+  useEffect(() => {
+    if (formData.passportPhoto instanceof File) {
+      try {
+        const url = URL.createObjectURL(formData.passportPhoto);
+        setPhotoPreviewUrl(url);
+        // Cleanup function
+        return () => {
+          URL.revokeObjectURL(url);
+        };
+      } catch (error) {
+        console.error("Failed to create photo preview URL:", error);
+      }
+    } else {
+      setPhotoPreviewUrl(null);
+    }
+  }, [formData.passportPhoto]);
 
   return (
     <div className="flex justify-center my-8">
@@ -39,11 +59,7 @@ function IDCard({ memberId, formData }) {
           <div className="flex justify-center my-2">
             <div className="w-14 h-14 rounded-full border-2 border-yellow-400 overflow-hidden flex items-center justify-center bg-gray-200">
               <img
-                src={
-                  formData.passportPhoto
-                    ? URL.createObjectURL(formData.passportPhoto)
-                    : "/profile11.avif"
-                }
+                src={photoPreviewUrl || "/profile11.avif"}
                 alt="Member"
                 className="w-full h-full object-cover"
                 onError={(e) => {

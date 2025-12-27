@@ -343,7 +343,7 @@ function MembersPage() {
                               }`}
                             >
                               <td className="px-4 md:px-6 py-4 text-xs md:text-sm font-medium text-blue-600">
-                                {member.id}
+                                {member.member_id}
                               </td>
                               <td className="px-4 md:px-6 py-4 text-xs md:text-sm text-gray-700 hidden md:table-cell">
                                 {member.full_name || "N/A"}
@@ -368,7 +368,7 @@ function MembersPage() {
                                   : "N/A"}
                               </td>
                               <td className="px-4 md:px-6 py-4 text-xs md:text-sm text-gray-600 hidden 2xl:table-cell">
-                                {member.referral_by || "N/A"}
+                                {member.introducer_name || "N/A"}
                               </td>
                               <td className="px-4 md:px-6 py-4 text-xs md:text-sm text-gray-600">
                                 {member.joining_date

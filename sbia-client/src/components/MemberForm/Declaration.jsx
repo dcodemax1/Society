@@ -4,6 +4,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 function Declaration({ formData, onChange, formErrors = {} }) {
   const [errors, setErrors] = useState({});
   const [isSaved, setIsSaved] = useState(!!formData.declarationDate);
+  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState(null);
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
   // Auto-populate current date on component mount
@@ -13,6 +14,24 @@ function Declaration({ formData, onChange, formErrors = {} }) {
       onChange({ target: { name: "declarationDate", value: today } });
     }
   }, []);
+
+  // Create and manage signature preview URL
+  useEffect(() => {
+    if (formData.signatureFile instanceof File) {
+      try {
+        const url = URL.createObjectURL(formData.signatureFile);
+        setSignaturePreviewUrl(url);
+        // Cleanup function
+        return () => {
+          URL.revokeObjectURL(url);
+        };
+      } catch (error) {
+        console.error("Failed to create signature preview URL:", error);
+      }
+    } else {
+      setSignaturePreviewUrl(null);
+    }
+  }, [formData.signatureFile]);
 
   // Handle file selection with validation
   const handleFile = (name, files) => {
@@ -45,6 +64,10 @@ function Declaration({ formData, onChange, formErrors = {} }) {
 
   // Handle file deletion
   const handleDeleteFile = (name) => {
+    if (signaturePreviewUrl) {
+      URL.revokeObjectURL(signaturePreviewUrl);
+      setSignaturePreviewUrl(null);
+    }
     onChange({ target: { name, value: null } });
     setErrors({ ...errors, [name]: "" });
   };
@@ -155,11 +178,13 @@ function Declaration({ formData, onChange, formErrors = {} }) {
 
                 {/* Image Preview */}
                 <div className="mb-3 max-w-xs">
-                  <img
-                    src={URL.createObjectURL(formData.signatureFile)}
-                    alt="Signature Preview"
-                    className="w-full h-auto rounded border border-green-200 max-h-40 object-cover"
-                  />
+                  {signaturePreviewUrl && (
+                    <img
+                      src={signaturePreviewUrl}
+                      alt="Signature Preview"
+                      className="w-full h-auto rounded border border-green-200 max-h-40 object-cover"
+                    />
+                  )}
                 </div>
 
                 <p className="text-xs text-gray-600">

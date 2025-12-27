@@ -113,9 +113,6 @@ export const validateLoanStep3 = (formData, showMessage) => {
   if (!formData.guarantor1MembershipDuration) {
     return false;
   }
-  if (parseFloat(formData.guarantor1MembershipDuration) < 6) {
-    return false;
-  }
   return true;
 };
 
@@ -131,12 +128,6 @@ export const validateLoanStep4 = (formData, showMessage) => {
     return false;
   }
   if (!formData.guarantor2MembershipDuration) {
-    return false;
-  }
-  if (parseFloat(formData.guarantor2MembershipDuration) < 6) {
-    return false;
-  }
-  if (!formData.guarantor2Consent) {
     return false;
   }
   return true;

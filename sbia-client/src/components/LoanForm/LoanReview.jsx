@@ -15,6 +15,8 @@ import LoanDeclaration from "./LoanDeclaration";
 
 function LoanReview({ formData, onChange, onEdit }) {
   const [editingSection, setEditingSection] = useState(null);
+  const [previousFormData, setPreviousFormData] = useState({});
+  const [modalFormErrors, setModalFormErrors] = useState({});
 
   // Handle checkbox change for terms agreement
   const handleAgreeChange = (e) => {
@@ -47,17 +49,100 @@ function LoanReview({ formData, onChange, onEdit }) {
 
   // Open modal for editing a section
   const openSectionEditor = (sectionName) => {
+    // Save current form data before opening editor
+    setPreviousFormData({ ...formData });
+    setModalFormErrors({});
     setEditingSection(sectionName);
   };
 
-  // Close modal without saving
+  // Close modal without saving - restore previous data
   const closeSectionEditor = () => {
+    // Only restore if there are unsaved changes
+    // Don't restore if modal was closed through "Save Changes" button
     setEditingSection(null);
   };
 
-  // Save section and close modal
+  // Save section and close modal with validation
   const saveSectionAndClose = () => {
     setEditingSection(null);
+    setModalFormErrors({});
+  };
+
+  // Handle changes with real-time validation
+  const handleModalChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    // Update form data
+    onChange(e);
+
+    // Generate field-specific error message using proper field labels
+    const fieldLabels = {
+      // Member Lookup fields
+      memberId: "Member ID",
+      memberName: "Member Name",
+      fathersName: "Father's/Husband's Name",
+      registeredMobile: "Mobile Number",
+      registeredAddress: "Registered Address",
+      monthlyContribution: "Monthly Contribution",
+      // Loan Request Details fields
+      loanAmount: "Loan Amount",
+      purposeOfLoan: "Purpose of Loan",
+      purposeOfLoanOther: "Purpose of Loan (Other)",
+      emiTenure: "EMI Tenure",
+      whenLoanRequired: "When Loan Required",
+      paymentTransferMode: "Payment Transfer Mode",
+      upiId: "UPI ID",
+      bankName: "Bank Name",
+      accountNumber: "Account Number",
+      ifscCode: "IFSC Code",
+      accountType: "Account Type",
+      // Guarantor 1 fields
+      guarantor1Name: "Guarantor 1 Name",
+      guarantor1MemberId: "Guarantor 1 Member ID",
+      guarantor1Mobile: "Guarantor 1 Mobile",
+      guarantor1MembershipDuration: "Guarantor 1 Membership Duration",
+      // Guarantor 2 fields
+      guarantor2Name: "Guarantor 2 Name",
+      guarantor2MemberId: "Guarantor 2 Member ID",
+      guarantor2Mobile: "Guarantor 2 Mobile",
+      guarantor2MembershipDuration: "Guarantor 2 Membership Duration",
+      // Declaration fields
+      loanDeclarationAccepted: "Declaration Acceptance",
+      bankDocument: "Bank Document",
+    };
+
+    // For checkbox fields, check if checked
+    if (type === "checkbox") {
+      if (!checked) {
+        const fieldLabel = fieldLabels[name] || name;
+        setModalFormErrors((prev) => ({
+          ...prev,
+          [name]: `${fieldLabel} is required`,
+        }));
+      } else {
+        setModalFormErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+    } else {
+      // Check if field is empty
+      if (value === "" || value === null) {
+        const fieldLabel = fieldLabels[name] || name;
+        setModalFormErrors((prev) => ({
+          ...prev,
+          [name]: `${fieldLabel} is required`,
+        }));
+      } else {
+        // Remove error for this field if it now has a value
+        setModalFormErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+    }
   };
 
   return (
@@ -293,8 +378,20 @@ function LoanReview({ formData, onChange, onEdit }) {
                   {editingSection === "loanDeclaration" && "Edit Declaration"}
                 </h3>
                 <button
-                  onClick={closeSectionEditor}
-                  className="text-white hover:bg-green-700 w-8 h-8 flex items-center justify-center rounded transition"
+                  onClick={() => {
+                    // Restore all previous data when close button (✕) is clicked
+                    Object.keys(previousFormData).forEach((key) => {
+                      onChange({
+                        target: {
+                          name: key,
+                          value: previousFormData[key],
+                        },
+                      });
+                    });
+                    closeSectionEditor();
+                  }}
+                  className="text-white hover:bg-green-700 w-8 h-8 flex items-center justify-center rounded transition cursor-pointer"
+                  title="Close and discard changes"
                 >
                   ✕
                 </button>
@@ -304,36 +401,77 @@ function LoanReview({ formData, onChange, onEdit }) {
             {/* Modal Content */}
             <div className="p-6 bg-gray-50">
               {editingSection === "memberLookup" && (
-                <MemberLookup formData={formData} onChange={onChange} />
+                <MemberLookup
+                  formData={formData}
+                  onChange={handleModalChange}
+                  modalErrors={modalFormErrors}
+                />
               )}
               {editingSection === "loanRequestDetails" && (
-                <LoanRequestDetails formData={formData} onChange={onChange} />
+                <LoanRequestDetails
+                  formData={formData}
+                  onChange={handleModalChange}
+                  modalErrors={modalFormErrors}
+                />
               )}
               {editingSection === "guarantor1" && (
-                <Guarantor1 formData={formData} onChange={onChange} />
+                <Guarantor1
+                  formData={formData}
+                  onChange={handleModalChange}
+                  modalErrors={modalFormErrors}
+                />
               )}
               {editingSection === "guarantor2" && (
-                <Guarantor2 formData={formData} onChange={onChange} />
+                <Guarantor2
+                  formData={formData}
+                  onChange={handleModalChange}
+                  modalErrors={modalFormErrors}
+                />
               )}
               {editingSection === "documentsUpload" && (
-                <DocumentsUpload formData={formData} onChange={onChange} />
+                <DocumentsUpload
+                  formData={formData}
+                  onChange={handleModalChange}
+                  modalErrors={modalFormErrors}
+                />
               )}
               {editingSection === "loanDeclaration" && (
-                <LoanDeclaration formData={formData} onChange={onChange} />
+                <LoanDeclaration
+                  formData={formData}
+                  onChange={handleModalChange}
+                  modalErrors={modalFormErrors}
+                />
               )}
             </div>
 
             {/* Modal Actions */}
             <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 sticky bottom-0 bg-white">
               <button
-                onClick={closeSectionEditor}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium transition"
+                onClick={() => {
+                  // Restore all previous data when Cancel is clicked
+                  // This ensures deleted values are restored
+                  Object.keys(previousFormData).forEach((key) => {
+                    onChange({
+                      target: {
+                        name: key,
+                        value: previousFormData[key],
+                      },
+                    });
+                  });
+                  closeSectionEditor();
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={saveSectionAndClose}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium transition"
+                className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
+                  Object.keys(modalFormErrors).length === 0
+                    ? "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                }`}
+                disabled={Object.keys(modalFormErrors).length > 0}
               >
                 Save Changes
               </button>

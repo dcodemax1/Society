@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 /**
@@ -79,6 +79,25 @@ function UploadBox({
   acceptTypes,
 }) {
   const [internalError, setInternalError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Create and manage preview URL
+  useEffect(() => {
+    if (value instanceof File) {
+      try {
+        const url = URL.createObjectURL(value);
+        setPreviewUrl(url);
+        // Cleanup function
+        return () => {
+          URL.revokeObjectURL(url);
+        };
+      } catch (error) {
+        console.error(`Failed to create preview URL for ${fieldName}:`, error);
+      }
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [value, fieldName]);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -104,10 +123,10 @@ function UploadBox({
 
   const handleDelete = () => {
     setInternalError("");
+    setPreviewUrl(null);
     onDelete(fieldName);
   };
 
-  const previewUrl = value ? URL.createObjectURL(value) : null;
   const displayError = error || internalError;
 
   return (

@@ -3,6 +3,58 @@
  * Injects a style tag to override oklch colors with hex equivalents
  */
 
+// Crop passport photo to exact dimensions (160x200px)
+export const cropPassportPhoto = async (photoFile) => {
+  if (!photoFile) return null;
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 160;
+        canvas.height = 200;
+        const ctx = canvas.getContext("2d");
+
+        // Calculate center crop
+        const sourceWidth = img.width;
+        const sourceHeight = img.height;
+        const sourceRatio = sourceWidth / sourceHeight;
+        const targetRatio = 160 / 200; // 0.8
+
+        let srcX, srcY, srcW, srcH;
+
+        if (sourceRatio > targetRatio) {
+          // Image is wider, crop horizontally
+          srcH = sourceHeight;
+          srcW = sourceHeight * targetRatio;
+          srcX = (sourceWidth - srcW) / 2;
+          srcY = 0;
+        } else {
+          // Image is taller, crop vertically
+          srcW = sourceWidth;
+          srcH = sourceWidth / targetRatio;
+          srcX = 0;
+          srcY = (sourceHeight - srcH) / 2;
+        }
+
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, 160, 200);
+
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob);
+          },
+          "image/png",
+          0.95
+        );
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(photoFile);
+  });
+};
+
 // Complete Tailwind color palette in hex format
 const tailwindColors = {
   transparent: "transparent",
@@ -357,6 +409,122 @@ export const generatePDFWithOklchFix = async (element, fileName) => {
     console.error("PDF error:", error);
     throw new Error(
       `PDF download failed. ${error.message || "Please try again."}`
+    );
+  }
+};
+/**
+ * Generate PDF blob with oklch color fixes
+ * Returns a Blob object instead of downloading
+ */
+export const generatePDFBlobWithOklchFix = async (element) => {
+  if (!element) {
+    throw new Error("Element not found");
+  }
+
+  try {
+    console.log("🔍 Starting PDF blob generation...");
+
+    // Dynamically import html2pdf
+    const html2pdf = (await import("html2pdf.js")).default;
+
+    // Clone the element
+    const clonedElement = element.cloneNode(true);
+
+    // Create a style element with color overrides
+    const styleElement = document.createElement("style");
+    styleElement.textContent = generateColorOverrideCss();
+    clonedElement.insertBefore(styleElement, clonedElement.firstChild);
+
+    // Suppress all oklch-related errors
+    const originalWarn = console.warn;
+    const originalError = console.error;
+
+    const errorFilter = (msg) => {
+      if (typeof msg === "string") {
+        return (
+          msg.toLowerCase().includes("oklch") ||
+          msg.toLowerCase().includes("unsupported color")
+        );
+      }
+      return false;
+    };
+
+    console.warn = function (...args) {
+      if (!args.some((arg) => errorFilter(arg))) {
+        originalWarn.apply(console, args);
+      }
+    };
+
+    console.error = function (...args) {
+      if (!args.some((arg) => errorFilter(arg))) {
+        originalError.apply(console, args);
+      }
+    };
+
+    console.log("📄 Converting to PDF blob...");
+
+    const options = {
+      margin: [5, 5, 5, 5],
+      filename: "BankForm.pdf",
+      image: { type: "png", quality: 1 },
+      html2canvas: {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowHeight: clonedElement.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Add style overrides to cloned document
+          const style = clonedDoc.createElement("style");
+          style.textContent = generateColorOverrideCss();
+          clonedDoc.head.appendChild(style);
+
+          // Force crop passport photo to exact dimensions
+          const passportPhotoStyle = clonedDoc.createElement("style");
+          passportPhotoStyle.textContent = `
+            img[alt="Passport Photo"] {
+              width: 160px !important;
+              height: 200px !important;
+              max-width: 160px !important;
+              max-height: 200px !important;
+              object-fit: cover !important;
+              object-position: center !important;
+              display: block !important;
+            }
+            img[alt="Passport Photo"] + * {
+              display: none !important;
+            }
+          `;
+          clonedDoc.head.appendChild(passportPhotoStyle);
+        },
+      },
+      jsPDF: {
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: false,
+      },
+      pagebreak: { mode: "avoid-all" },
+    };
+
+    // Generate PDF and return as blob
+    const pdf = await html2pdf()
+      .set(options)
+      .from(clonedElement)
+      .toPdf()
+      .output("blob");
+
+    // Restore console
+    console.warn = originalWarn;
+    console.error = originalError;
+
+    console.log("✅ PDF blob generated successfully");
+    return pdf;
+  } catch (error) {
+    console.error("PDF blob generation error:", error);
+    throw new Error(
+      `PDF generation failed. ${error.message || "Please try again."}`
     );
   }
 };

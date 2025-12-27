@@ -12,6 +12,8 @@ export const LoanFormNavigation = ({
   onPrevious,
   onNext,
   onSubmit,
+  isNextDisabled = false,
+  isSubmitDisabled = false,
 }) => {
   const nextStepName = steps[currentStep]?.name || "Next";
   const isLastStep = currentStep === totalSteps;
@@ -37,9 +39,20 @@ export const LoanFormNavigation = ({
         <button
           type="button"
           onClick={onSubmit}
-          className="flex items-center justify-center gap-1 sm:gap-3 px-3 sm:px-8 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 cursor-pointer text-xs sm:text-sm"
+          disabled={isSubmitDisabled}
+          className={`flex items-center justify-center gap-1 sm:gap-3 px-3 sm:px-8 py-2 rounded-md font-semibold text-xs sm:text-sm transition-all duration-200 ${
+            isSubmitDisabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+          }`}
         >
-          <span className="flex items-center justify-center w-4 h-4 sm:w-6 sm:h-6 bg-white text-green-600 rounded-full font-bold text-xs">
+          <span
+            className={`flex items-center justify-center w-4 h-4 sm:w-6 sm:h-6 rounded-full font-bold text-xs ${
+              isSubmitDisabled
+                ? "bg-gray-200 text-gray-400"
+                : "bg-white text-green-600"
+            }`}
+          >
             ✓
           </span>
           <span>Submit Application</span>
@@ -48,7 +61,12 @@ export const LoanFormNavigation = ({
         <button
           type="button"
           onClick={onNext}
-          className="flex items-center justify-center gap-2 px-3 sm:px-8 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 cursor-pointer text-xs sm:text-sm"
+          disabled={isNextDisabled}
+          className={`flex items-center justify-center gap-2 px-3 sm:px-8 py-2 rounded-md font-semibold text-xs sm:text-sm transition-all duration-200 ${
+            isNextDisabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+          }`}
         >
           <span>Next</span> <span>→</span>
         </button>

@@ -165,7 +165,7 @@ function ReferralBy({ formData, onChange, formErrors = {} }) {
         {/* Search Type Selector and Input */}
         <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-800 mb-3">
-            Search by Member ID or Mobile Number
+            Search by Member ID
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 lg:gap-3">
             <input
@@ -214,7 +214,10 @@ function ReferralBy({ formData, onChange, formErrors = {} }) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="flex-shrink-0">
-                          {getProfileImage(member) && !searchResultImageErrors[member.member_id || member.memberId] ? (
+                          {getProfileImage(member) &&
+                          !searchResultImageErrors[
+                            member.member_id || member.memberId
+                          ] ? (
                             <img
                               src={getProfileImage(member)}
                               alt={member.full_name || member.fullName}
@@ -235,7 +238,8 @@ function ReferralBy({ formData, onChange, formErrors = {} }) {
                             {member.full_name || member.fullName}
                           </p>
                           <p className="text-xs text-gray-600">
-                            ID: {member.member_id || member.memberId} | Mobile: {member.mobile}
+                            ID: {member.member_id || member.memberId} | Mobile:{" "}
+                            {member.mobile}
                           </p>
                         </div>
                       </div>
@@ -318,7 +322,9 @@ function ReferralBy({ formData, onChange, formErrors = {} }) {
                 />
               ) : (
                 <div className="w-28 h-28 rounded-full bg-gray-300 border border-white shadow-md flex items-center justify-center">
-                  <p className="text-xs text-gray-600 font-medium">No profile</p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    No profile
+                  </p>
                 </div>
               )}
             </div>

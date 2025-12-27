@@ -1,51 +1,150 @@
 /**
  * Guarantor 1 - Referrer Component (Loan Form Step 3)
  * Fields: Guarantor 1 Name, Member ID, Mobile, Membership Duration (auto-filled from referrer)
- * Auto-filled from membership introducer/referrer data
+ * Auto-filled from member's introducer details fetched from server
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-function Guarantor1({ formData, onChange }) {
+function Guarantor1({ formData, onChange, modalErrors = {} }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   /**
-   * Auto-load dummy referrer data on component mount
-   * In future, this will fetch from actual membership introducer/referrer records
+   * Fetch introducer details from server based on Member ID from loan form
+   * Auto-fill Guarantor 1 fields whenever memberId changes
    */
   useEffect(() => {
-    // Auto-fill with dummy referrer data (from membership introducer)
-    if (!formData.guarantor1Name) {
-      onChange({
-        target: {
-          name: "guarantor1Name",
-          value: "Rajesh Kumar",
-        },
-      });
+    const fetchIntroducerData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // Get Member ID from loan form (filled in MemberLookup step)
+        const memberId = formData.memberId;
+
+        console.log("Member ID from loan form:", memberId);
+
+        if (!memberId || memberId.trim() === "") {
+          setError("Please enter Member ID in Member Details section first");
+          setLoading(false);
+          return;
+        }
+
+        // Fetch member details from server to get introducer information
+        // Use local development server URL
+        const apiUrl = `http://localhost:8000/api/v1/members/${memberId}`;
+        console.log("Fetching member details from API:", apiUrl);
+
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error(`Member not found. Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Member details API Response:", data);
+
+        if (data.status === "success" && data.data) {
+          const member = data.data;
+          const { introducer_name, introducer_member_id, introducer_mobile } =
+            member;
+
+          console.log("Extracted introducer data:", {
+            introducer_name,
+            introducer_member_id,
+            introducer_mobile,
+          });
+
+          // Auto-fill basic introducer fields
+          onChange({
+            target: {
+              name: "guarantor1Name",
+              value: introducer_name || "",
+            },
+          });
+
+          onChange({
+            target: {
+              name: "guarantor1MemberId",
+              value: introducer_member_id || "",
+            },
+          });
+
+          onChange({
+            target: {
+              name: "guarantor1Mobile",
+              value: introducer_mobile || "",
+            },
+          });
+
+          // Now fetch the introducer's own record to get their joining date
+          if (introducer_member_id) {
+            try {
+              const introducerApiUrl = `http://localhost:8000/api/v1/members/${introducer_member_id}`;
+              console.log(
+                "Fetching introducer's joining date from:",
+                introducerApiUrl
+              );
+
+              const introducerResponse = await fetch(introducerApiUrl);
+              if (introducerResponse.ok) {
+                const introducerData = await introducerResponse.json();
+
+                if (
+                  introducerData.status === "success" &&
+                  introducerData.data &&
+                  introducerData.data.joining_date
+                ) {
+                  const joiningDate = new Date(
+                    introducerData.data.joining_date
+                  );
+                  const currentDate = new Date();
+                  const membershipDurationMonths = Math.floor(
+                    (currentDate - joiningDate) / (1000 * 60 * 60 * 24 * 30.44)
+                  );
+
+                  console.log(
+                    "Introducer joining date:",
+                    introducerData.data.joining_date
+                  );
+                  console.log(
+                    "Calculated membership duration:",
+                    membershipDurationMonths
+                  );
+
+                  onChange({
+                    target: {
+                      name: "guarantor1MembershipDuration",
+                      value: Math.max(0, membershipDurationMonths).toString(),
+                    },
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching introducer's joining date:", err);
+              // Don't stop the process if this fails, other fields are already filled
+            }
+          }
+
+          setLoading(false);
+        } else {
+          throw new Error("Invalid member data received");
+        }
+      } catch (err) {
+        console.error("Error fetching introducer details:", err);
+        setError(
+          `Error: ${err.message || "Failed to load introducer details"}`
+        );
+        setLoading(false);
+      }
+    };
+
+    // Trigger fetch when memberId changes
+    if (formData.memberId) {
+      fetchIntroducerData();
     }
-    if (!formData.guarantor1MemberId) {
-      onChange({
-        target: {
-          name: "guarantor1MemberId",
-          value: "MID-1001",
-        },
-      });
-    }
-    if (!formData.guarantor1Mobile) {
-      onChange({
-        target: {
-          name: "guarantor1Mobile",
-          value: "9876543210",
-        },
-      });
-    }
-    if (!formData.guarantor1MembershipDuration) {
-      onChange({
-        target: {
-          name: "guarantor1MembershipDuration",
-          value: "24",
-        },
-      });
-    }
-  }, []);
+  }, [formData.memberId, onChange]);
   return (
     <div className="space-y-6">
       {/* Guarantor 1 Section */}
@@ -72,6 +171,11 @@ function Guarantor1({ formData, onChange }) {
             {!formData.guarantor1Name && (
               <p className="text-xs text-red-500 mt-1">
                 Guarantor 1 name required
+              </p>
+            )}
+            {modalErrors.guarantor1Name && (
+              <p className="text-xs text-red-500 mt-1">
+                {modalErrors.guarantor1Name}
               </p>
             )}
           </div>
@@ -135,12 +239,6 @@ function Guarantor1({ formData, onChange }) {
                 Membership duration required
               </p>
             )}
-            {formData.guarantor1MembershipDuration &&
-              parseFloat(formData.guarantor1MembershipDuration) < 6 && (
-                <p className="text-xs text-red-500 mt-1">
-                  Guarantor 1 must be {">="} 6 months
-                </p>
-              )}
           </div>
         </div>
 

@@ -11,6 +11,7 @@ import {
   handleLoanPrevious,
   handleLoanSubmit,
 } from "./utils/loanFormHandlers";
+import { validateLoanStepTransition } from "./utils/loanFormValidation";
 
 function LoanForm() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -54,6 +55,20 @@ function LoanForm() {
    */
   const calculatePercentage = () => {
     return Math.round((currentStep / LOAN_TOTAL_STEPS) * 100);
+  };
+
+  /**
+   * Check if next button should be disabled
+   */
+  const isNextButtonDisabled = () => {
+    return !validateLoanStepTransition(currentStep, formData, () => {});
+  };
+
+  /**
+   * Check if submit button should be disabled
+   */
+  const isSubmitButtonDisabled = () => {
+    return !formData.agreedToLoanTerms;
   };
 
   /**
@@ -147,6 +162,8 @@ function LoanForm() {
                   currentStep={currentStep}
                   totalSteps={LOAN_TOTAL_STEPS}
                   steps={LOAN_STEPS}
+                  isNextDisabled={isNextButtonDisabled()}
+                  isSubmitDisabled={isSubmitButtonDisabled()}
                   onPrevious={() =>
                     handleLoanPrevious(currentStep, setCurrentStep, showMessage)
                   }

@@ -11,7 +11,7 @@ import React, {
 } from "react";
 
 const MemberLookup = forwardRef(function MemberLookup(
-  { formData, onChange },
+  { formData, onChange, modalErrors = {} },
   ref
 ) {
   const [errors, setErrors] = useState({});
@@ -176,8 +176,10 @@ const MemberLookup = forwardRef(function MemberLookup(
               maxLength="12"
               className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            {errors.memberId && (
-              <p className="text-xs text-red-500 mt-1">{errors.memberId}</p>
+            {(modalErrors.memberId || errors.memberId) && (
+              <p className="text-xs text-red-500 mt-1">
+                {modalErrors.memberId || errors.memberId}
+              </p>
             )}
           </div>
 
@@ -195,8 +197,10 @@ const MemberLookup = forwardRef(function MemberLookup(
               placeholder="Enter member name"
               className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            {errors.memberName && (
-              <p className="text-xs text-red-500 mt-1">{errors.memberName}</p>
+            {(modalErrors.memberName || errors.memberName) && (
+              <p className="text-xs text-red-500 mt-1">
+                {modalErrors.memberName || errors.memberName}
+              </p>
             )}
           </div>
 
@@ -214,8 +218,10 @@ const MemberLookup = forwardRef(function MemberLookup(
               placeholder="Enter father's or husband's name"
               className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            {errors.fathersName && (
-              <p className="text-xs text-red-500 mt-1">{errors.fathersName}</p>
+            {(modalErrors.fathersName || errors.fathersName) && (
+              <p className="text-xs text-red-500 mt-1">
+                {modalErrors.fathersName || errors.fathersName}
+              </p>
             )}
           </div>
 
@@ -242,9 +248,9 @@ const MemberLookup = forwardRef(function MemberLookup(
               maxLength="10"
               className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            {errors.registeredMobile && (
+            {(modalErrors.registeredMobile || errors.registeredMobile) && (
               <p className="text-xs text-red-500 mt-1">
-                {errors.registeredMobile}
+                {modalErrors.registeredMobile || errors.registeredMobile}
               </p>
             )}
           </div>
@@ -263,9 +269,9 @@ const MemberLookup = forwardRef(function MemberLookup(
               rows="2"
               className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none overflow-hidden"
             />
-            {errors.registeredAddress && (
+            {(modalErrors.registeredAddress || errors.registeredAddress) && (
               <p className="text-xs text-red-500 mt-1">
-                {errors.registeredAddress}
+                {modalErrors.registeredAddress || errors.registeredAddress}
               </p>
             )}
           </div>
@@ -284,9 +290,10 @@ const MemberLookup = forwardRef(function MemberLookup(
               placeholder="e.g., 500"
               className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            {errors.monthlyContribution && (
+            {(modalErrors.monthlyContribution ||
+              errors.monthlyContribution) && (
               <p className="text-xs text-red-500 mt-1">
-                {errors.monthlyContribution}
+                {modalErrors.monthlyContribution || errors.monthlyContribution}
               </p>
             )}
           </div>

@@ -8,7 +8,7 @@
 import React, { useState } from "react";
 import CustomDropdown from "./components/CustomDropdown";
 
-function LoanRequestDetails({ formData, onChange }) {
+function LoanRequestDetails({ formData, onChange, modalErrors = {} }) {
   const [upiError, setUpiError] = useState("");
 
   // Loan purposes dropdown options
@@ -189,11 +189,13 @@ function LoanRequestDetails({ formData, onChange }) {
               <span className="text-red-500">*</span>
             </label>
             <div className="w-full border border-gray-300 rounded-md p-3 bg-gray-50 text-gray-700 text-sm md:text-base flex items-center cursor-not-allowed">
-              {new Date().toLocaleDateString("en-IN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })}
+              {new Date()
+                .toLocaleDateString("en-IN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                })
+                .replace(/\//g, "-")}
             </div>
             <input type="hidden" name="requestDate" value={getTodayDate()} />
           </div>
@@ -215,15 +217,20 @@ function LoanRequestDetails({ formData, onChange }) {
             <p className="text-xs text-gray-500 mt-1">
               Min: ₹10,000 | Max: ₹200,000
             </p>
-            {!formData.loanAmount && (
-              <p className="text-xs text-red-500 mt-1">Loan amount required</p>
-            )}
-            {formData.loanAmount && parseFloat(formData.loanAmount) < 10000 && (
+            {(modalErrors.loanAmount || !formData.loanAmount) && (
               <p className="text-xs text-red-500 mt-1">
-                Minimum loan amount is ₹10,000
+                {modalErrors.loanAmount || "Loan amount required"}
               </p>
             )}
-            {formData.loanAmount &&
+            {!modalErrors.loanAmount &&
+              formData.loanAmount &&
+              parseFloat(formData.loanAmount) < 10000 && (
+                <p className="text-xs text-red-500 mt-1">
+                  Minimum loan amount is ₹10,000
+                </p>
+              )}
+            {!modalErrors.loanAmount &&
+              formData.loanAmount &&
               parseFloat(formData.loanAmount) > 200000 && (
                 <p className="text-xs text-red-500 mt-1">
                   Maximum loan amount is ₹200,000
@@ -246,7 +253,10 @@ function LoanRequestDetails({ formData, onChange }) {
               placeholder="Select Purpose"
               label="Purpose of Loan"
               required
-              error={!formData.purposeOfLoan ? "Purpose of loan required" : ""}
+              error={
+                modalErrors.purposeOfLoan ||
+                (!formData.purposeOfLoan ? "Purpose of loan required" : "")
+              }
             />
 
             {/* Show input if Other selected */}
@@ -265,9 +275,11 @@ function LoanRequestDetails({ formData, onChange }) {
                   maxLength="100"
                   className="w-full border border-gray-300 rounded-md p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                 />
-                {!formData.purposeOfLoanOther && (
+                {(modalErrors.purposeOfLoanOther ||
+                  !formData.purposeOfLoanOther) && (
                   <p className="text-xs text-red-500 mt-1">
-                    Please specify the loan purpose
+                    {modalErrors.purposeOfLoanOther ||
+                      "Please specify the loan purpose"}
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
@@ -289,7 +301,10 @@ function LoanRequestDetails({ formData, onChange }) {
             placeholder="Select Tenure"
             label="EMI Tenure (months)"
             required
-            error={!formData.emiTenure ? "Please select tenure" : ""}
+            error={
+              modalErrors.emiTenure ||
+              (!formData.emiTenure ? "Please select tenure" : "")
+            }
           />
 
           {/* Row 3, Col 1: When is Loan Required? */}
@@ -307,9 +322,10 @@ function LoanRequestDetails({ formData, onChange }) {
             label="Loan Required?"
             required
             error={
-              !formData.whenLoanRequired
+              modalErrors.whenLoanRequired ||
+              (!formData.whenLoanRequired
                 ? "Please select when loan is required"
-                : ""
+                : "")
             }
           />
 
@@ -326,9 +342,10 @@ function LoanRequestDetails({ formData, onChange }) {
             label="Payment Transfer Mode"
             required
             error={
-              !formData.paymentTransferMode
+              modalErrors.paymentTransferMode ||
+              (!formData.paymentTransferMode
                 ? "Please select a transfer mode"
-                : ""
+                : "")
             }
           />
         </div>
@@ -361,10 +378,12 @@ function LoanRequestDetails({ formData, onChange }) {
                       : "border-gray-300 focus:ring-2 focus:ring-green-500"
                   }`}
                 />
-                {upiError && (
-                  <p className="text-xs text-red-500 mt-1">{upiError}</p>
+                {(modalErrors.upiId || upiError) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {modalErrors.upiId || upiError}
+                  </p>
                 )}
-                {!formData.upiId && (
+                {!modalErrors.upiId && !upiError && !formData.upiId && (
                   <p className="text-xs text-red-500 mt-1">UPI ID required</p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
@@ -394,9 +413,9 @@ function LoanRequestDetails({ formData, onChange }) {
                   placeholder="e.g., State Bank of India"
                   className="w-full border border-gray-300 rounded-md p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                 />
-                {!formData.bankName && (
+                {(modalErrors.bankName || !formData.bankName) && (
                   <p className="text-xs text-red-500 mt-1">
-                    Bank name required
+                    {modalErrors.bankName || "Bank name required"}
                   </p>
                 )}
               </div>
@@ -414,9 +433,9 @@ function LoanRequestDetails({ formData, onChange }) {
                   placeholder="Enter account number"
                   className="w-full border border-gray-300 rounded-md p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                 />
-                {!formData.accountNumber && (
+                {(modalErrors.accountNumber || !formData.accountNumber) && (
                   <p className="text-xs text-red-500 mt-1">
-                    Account number required
+                    {modalErrors.accountNumber || "Account number required"}
                   </p>
                 )}
               </div>
@@ -435,9 +454,9 @@ function LoanRequestDetails({ formData, onChange }) {
                   maxLength="11"
                   className="w-full border border-gray-300 rounded-md p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                 />
-                {!formData.ifscCode && (
+                {(modalErrors.ifscCode || !formData.ifscCode) && (
                   <p className="text-xs text-red-500 mt-1">
-                    IFSC code required
+                    {modalErrors.ifscCode || "IFSC code required"}
                   </p>
                 )}
               </div>
@@ -459,10 +478,11 @@ function LoanRequestDetails({ formData, onChange }) {
                     </option>
                   ))}
                 </select>
-                {(!formData.accountType ||
+                {(modalErrors.accountType ||
+                  !formData.accountType ||
                   formData.accountType === "Select") && (
                   <p className="text-xs text-red-500 mt-1">
-                    Account type required
+                    {modalErrors.accountType || "Account type required"}
                   </p>
                 )}
               </div>
