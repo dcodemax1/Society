@@ -1,0 +1,165 @@
+/* 
+ * PDF Export Styles - Override all colors to hex/rgb values
+ * Applied only during PDF generation to avoid oklch parsing errors
+ */
+
+* {
+  color-space: srgb !important;
+}
+
+/* Force all text to be black */
+body,
+p,
+span,
+div,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #000000 !important;
+}
+
+/* Override all background colors */
+.bg-white,
+[class*="bg-white"] {
+  background-color: #ffffff !important;
+}
+
+.bg-gray-50,
+[class*="bg-gray-50"] {
+  background-color: #f9fafb !important;
+}
+
+.bg-gray-100,
+[class*="bg-gray-100"] {
+  background-color: #f3f4f6 !important;
+}
+
+.bg-gray-200,
+[class*="bg-gray-200"] {
+  background-color: #e5e7eb !important;
+}
+
+.bg-blue-50,
+[class*="bg-blue-50"] {
+  background-color: #eff6ff !important;
+}
+
+.bg-blue-100,
+[class*="bg-blue-100"] {
+  background-color: #dbeafe !important;
+}
+
+.bg-blue-600,
+[class*="bg-blue-600"] {
+  background-color: #2563eb !important;
+}
+
+.bg-blue-800,
+[class*="bg-blue-800"] {
+  background-color: #1e40af !important;
+}
+
+.bg-red-50,
+[class*="bg-red-50"] {
+  background-color: #fef2f2 !important;
+}
+
+.bg-red-100,
+[class*="bg-red-100"] {
+  background-color: #fee2e2 !important;
+}
+
+.bg-red-600,
+[class*="bg-red-600"] {
+  background-color: #dc2626 !important;
+}
+
+.bg-green-50,
+[class*="bg-green-50"] {
+  background-color: #f0fdf4 !important;
+}
+
+.bg-green-100,
+[class*="bg-green-100"] {
+  background-color: #dcfce7 !important;
+}
+
+.bg-green-600,
+[class*="bg-green-600"] {
+  background-color: #16a34a !important;
+}
+
+.bg-yellow-50,
+[class*="bg-yellow-50"] {
+  background-color: #fefce8 !important;
+}
+
+.text-white,
+[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+.text-gray-600,
+[class*="text-gray-600"] {
+  color: #4b5563 !important;
+}
+
+.text-gray-700,
+[class*="text-gray-700"] {
+  color: #374151 !important;
+}
+
+.text-blue-600,
+[class*="text-blue-600"] {
+  color: #2563eb !important;
+}
+
+.text-red-600,
+[class*="text-red-600"] {
+  color: #dc2626 !important;
+}
+
+.text-green-600,
+[class*="text-green-600"] {
+  color: #16a34a !important;
+}
+
+/* Border colors */
+.border-gray-200,
+[class*="border-gray-200"] {
+  border-color: #e5e7eb !important;
+}
+
+.border-blue-200,
+[class*="border-blue-200"] {
+  border-color: #bfdbfe !important;
+}
+
+.border-blue-600,
+[class*="border-blue-600"] {
+  border-color: #2563eb !important;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+}
+
+tr {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+th {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+  padding: 8px !important;
+  text-align: left !important;
+}
+
+td {
+  padding: 8px !important;
+  color: #000000 !important;
+}

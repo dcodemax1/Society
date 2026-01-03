@@ -1,0 +1,15 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+import app from "./src/app.js";
+
+const PORT = process.env.PORT;
+// console.log(PORT)
+
+app.get("/", (req, res) => {
+  res.send("<h1>API is running...<h1/>");
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
