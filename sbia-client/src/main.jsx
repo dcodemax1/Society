@@ -7,8 +7,11 @@ import MemberFormPage from "./pages/MemberFormPage.jsx";
 import LoanFormPage from "./pages/LoanFormPage.jsx";
 import BankFormPage from "./pages/BankFormPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
+<<<<<<< HEAD
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import MemberDashboard from "./pages/MemberDashboard.jsx";
+=======
+>>>>>>> 34f949a57693ffc7e458c65d4c0d489add73950d
 import {
   LoanRequestsPage,
   MembersPage,
@@ -28,8 +31,11 @@ createRoot(document.getElementById("root")).render(
         <Route path="/loan-application" element={<LoanFormPage />} />
         <Route path="/bank-form" element={<BankFormPage />} />
         <Route path="/admin" element={<AdminPage />} />
+<<<<<<< HEAD
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/member-dashboard" element={<MemberDashboard />} />
+=======
+>>>>>>> 34f949a57693ffc7e458c65d4c0d489add73950d
         <Route path="/loan-requests" element={<LoanRequestsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/referral" element={<ReferralPage />} />
