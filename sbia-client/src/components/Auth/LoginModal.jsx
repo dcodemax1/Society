@@ -20,4 +20,3 @@ function LoginModal({ onClose }) {
 }
 
 export default LoginModal;
-
