@@ -31,12 +31,26 @@ export const submitMemberForm = async (formData) => {
   try {
     const snakeCaseData = camelToSnakeCase(formData);
 
+    // Create FormData for multipart/form-data (needed for file uploads)
+    const multipartFormData = new FormData();
+
+    // Add all fields to FormData
+    for (const [key, value] of Object.entries(snakeCaseData)) {
+      if (value instanceof File) {
+        // Add File objects directly
+        multipartFormData.append(key, value);
+        console.log(`Added file to FormData: ${key}`, value.name);
+      } else if (value !== null && value !== undefined) {
+        // Add other values as strings
+        multipartFormData.append(key, String(value));
+      }
+    }
+
+    console.log("Submitting FormData with files...");
     const response = await fetch(`${API_BASE_URL}/members`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(snakeCaseData),
+      body: multipartFormData,
+      // Don't set Content-Type header - browser will set it with boundary
     });
 
     if (!response.ok) {
@@ -52,6 +66,7 @@ export const submitMemberForm = async (formData) => {
       message: data.message,
     };
   } catch (error) {
+    console.error("Member form submission error:", error);
     return {
       success: false,
       error: error.message,
