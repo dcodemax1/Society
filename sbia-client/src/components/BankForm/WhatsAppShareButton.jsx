@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FaWhatsapp } from "react-icons/fa";
 import { generatePDFBlob } from "../../utils/pdfDownloadHelper";
+import { STATE_CODES } from "../MemberForm/config/formConfig";
 
 /**
  * WhatsApp Share Button Component
@@ -22,8 +23,16 @@ function WhatsAppShareButton({ formRef, formData = {} }) {
       const pdfBlob = await generatePDFBlob(formRef.current);
 
       // Create a File object from the Blob
-      const memberId = formData.mobile ? formData.mobile.slice(-10) : "form";
-      const fileName = `BankForm-${memberId}-${new Date().getTime()}.pdf`;
+      // Generate Member ID: mobile (10 digits) + state code (2 digits)
+      const mobile = formData.mobile
+        ? formData.mobile.slice(-10)
+        : "0000000000";
+      const stateName = formData.permanentState || formData.commState || "N/A";
+      const stateCode = STATE_CODES[stateName] || "XX";
+      const memberId = `${mobile}${stateCode}`;
+
+      // Format: SBIA WITH [memberId]
+      const fileName = `SBIA WITH ${memberId}.pdf`;
       const pdfFile = new File([pdfBlob], fileName, {
         type: "application/pdf",
       });

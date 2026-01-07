@@ -3,6 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import memberRoutes from "./modules/members/member.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import loanRoutes from "./modules/loans/loan.routes.js";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 
@@ -23,5 +24,6 @@ app.use(cookieParser());
 
 app.use("/api/v1/members", memberRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/loans", loanRoutes);
 
 export default app;

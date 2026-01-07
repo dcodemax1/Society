@@ -228,3 +228,49 @@ export const fetchMemberById = async (member_id) => {
   );
   return rows[0] || null;
 };
+
+export const getReferralData = async () => {
+  // Get all members who have referred at least one other member
+  const [introducerRows] = await pool.query(
+    `SELECT 
+      m.member_id,
+      m.full_name as referrer_name,
+      m.mobile as referrer_phone,
+      m.created_at,
+      COUNT(referred.member_id) as total_referrals,
+      MAX(referred.created_at) as last_referral_date
+    FROM members m
+    LEFT JOIN members referred ON m.member_id = referred.introducer_member_id
+    WHERE m.member_id IS NOT NULL
+    GROUP BY m.member_id, m.full_name, m.mobile, m.created_at
+    HAVING COUNT(referred.member_id) > 0
+    ORDER BY total_referrals DESC, last_referral_date DESC`
+  );
+
+  // For each introducer, get their referred members
+  const referralData = await Promise.all(
+    introducerRows.map(async (introducer) => {
+      const [referredMembers] = await pool.query(
+        `SELECT full_name, created_at
+         FROM members
+         WHERE introducer_member_id = ?
+         ORDER BY created_at DESC`,
+        [introducer.member_id]
+      );
+
+      return {
+        id: introducer.member_id,
+        referrerName: introducer.referrer_name,
+        referrerPhone: introducer.referrer_phone,
+        totalReferrals: introducer.total_referrals,
+        referredMembers: referredMembers.map((m) => m.full_name),
+        lastReferralDate: introducer.last_referral_date
+          ? new Date(introducer.last_referral_date).toISOString().split("T")[0]
+          : null,
+        status: "Active",
+      };
+    })
+  );
+
+  return referralData;
+};

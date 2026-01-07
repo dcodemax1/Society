@@ -29,12 +29,23 @@ function Login({ onSuccess, onBackToSignup }) {
 
     try {
       const response = await authApi.login(email, password);
-      if (response?.data?.success && response?.data?.data?.accessToken) {
+      if (
+        response?.data?.status === "success" &&
+        response?.data?.data?.accessToken
+      ) {
         // Save access token
         tokenService.setToken(response.data.data.accessToken);
+        // Store user role for route protection
+        const userRole =
+          response?.data?.data?.user?.role || response?.data?.data?.role;
+        if (userRole) {
+          tokenService.setUserRole(userRole);
+        }
 
-        // Call onSuccess which should navigate to dashboard
-        onSuccess();
+        // Call onSuccess callback to let parent component handle navigation
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (err) {
       setError(

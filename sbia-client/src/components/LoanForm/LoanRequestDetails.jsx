@@ -429,8 +429,16 @@ function LoanRequestDetails({ formData, onChange, modalErrors = {} }) {
                   type="text"
                   name="accountNumber"
                   value={formData.accountNumber || ""}
-                  onChange={onChange}
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .replace(/[^0-9]/g, "")
+                      .slice(0, 25);
+                    onChange({
+                      target: { name: "accountNumber", value },
+                    });
+                  }}
                   placeholder="Enter account number"
+                  maxLength="25"
                   className="w-full border border-gray-300 rounded-md p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                 />
                 {(modalErrors.accountNumber || !formData.accountNumber) && (

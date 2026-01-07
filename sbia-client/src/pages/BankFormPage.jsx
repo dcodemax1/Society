@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaDownload } from "react-icons/fa";
 import { BankForm } from "../components/BankForm";
 import { generatePDFWithOklchFix } from "../utils/oklchColorFix";
+import { STATE_CODES } from "../components/MemberForm/config/formConfig";
 
 function BankFormPage() {
   const [formData, setFormData] = useState({});
@@ -93,9 +94,16 @@ function BankFormPage() {
     try {
       setIsDownloading(true);
 
-      // Generate filename with member ID
-      const memberId = formData.mobile ? formData.mobile.slice(-10) : "form";
-      const fileName = `BankForm-${memberId}-${new Date().getTime()}.pdf`;
+      // Generate Member ID: mobile (10 digits) + state code (2 digits)
+      const mobile = formData.mobile
+        ? formData.mobile.slice(-10)
+        : "0000000000";
+      const stateName = formData.permanentState || formData.commState || "N/A";
+      const stateCode = STATE_CODES[stateName] || "XX";
+      const memberId = `${mobile}${stateCode}`;
+
+      // Format: SBIA WITH [memberId]
+      const fileName = `SBIA WITH ${memberId}.pdf`;
 
       // Use the PDF utility
       await generatePDFWithOklchFix(bankFormRef.current, fileName);

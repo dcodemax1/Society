@@ -42,7 +42,7 @@ function RecentMembers() {
             })
             .slice(0, 5)
             .map((member) => ({
-              id: member.id,
+              id: member.member_id || member.id || Math.random(),
               name: member.full_name || "N/A",
               email: member.email || "N/A",
               mobile: member.mobile ? `+91 ${member.mobile}` : "N/A",

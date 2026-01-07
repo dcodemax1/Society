@@ -10,6 +10,7 @@ import {
   clearRefreshToken,
 } from "./auth.service.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const requestOTP = async (req, res) => {
   try {
@@ -70,10 +71,21 @@ export const login = async (req, res) => {
     const user = await findUserByEmail(email);
     if (!user) return res.status(400).json(error("invalid credentials"));
 
+    // If user exists but has no password set, they need to set password first
+    if (!user.password_hash) {
+      return res.status(200).json(
+        success("Password not set. Please set password first", {
+          requiresPasswordSetup: true,
+          email: user.email,
+          role: user.role,
+        })
+      );
+    }
+
     const match = await bcrypt.compare(password, user.password_hash || "");
     if (!match) return res.status(400).json(error("invalid credentials"));
 
-    const payload = { id: user.id, email: user.email };
+    const payload = { id: user.id, email: user.email, role: user.role };
     const { accessToken, refreshToken } = generateTokens(payload);
 
     await saveRefreshTokenHash(user.id, refreshToken);
@@ -84,7 +96,12 @@ export const login = async (req, res) => {
     return res.json(
       success("Login successful", {
         accessToken,
-        user: { id: user.id, email: user.email, is_verified: user.is_verified },
+        user: {
+          id: user.id,
+          email: user.email,
+          is_verified: user.is_verified,
+          role: user.role,
+        },
       })
     );
   } catch (err) {
@@ -144,6 +161,7 @@ export const me = async (req, res) => {
     success("me", {
       id: req.user.id,
       email: req.user.email,
+      role: req.user.role,
       is_verified: req.user.is_verified,
     })
   );

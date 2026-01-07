@@ -3,6 +3,7 @@ import {
   fetchMemberUsingAadhaar,
   fetchMembers,
   fetchMemberById,
+  getReferralData,
 } from "./member.service.js";
 
 import { normalizeMemberInput } from "../../utils/normalizeMember.js";
@@ -86,5 +87,15 @@ export const getIntroducerDetails = async (req, res) => {
     );
   } catch (err) {
     return res.status(500).json(error("Failed to fetch introducer details"));
+  }
+};
+
+export const getReferrals = async (req, res) => {
+  try {
+    const referrals = await getReferralData();
+    return res.json(success("Referral data fetched", referrals));
+  } catch (err) {
+    console.error("Error fetching referrals:", err);
+    return res.status(500).json(error("Failed to fetch referral data"));
   }
 };

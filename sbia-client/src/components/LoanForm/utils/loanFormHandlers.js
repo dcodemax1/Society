@@ -5,10 +5,10 @@
 
 import {
   LOAN_TOTAL_STEPS,
-  LOAN_SUBMIT_ENDPOINT,
   LOAN_LOCAL_STORAGE_KEY,
 } from "../config/loanFormConfig";
 import { validateLoanStepTransition } from "./loanFormValidation";
+import { loanApi } from "../../../services/loanApi";
 
 /**
  * Handle moving to next step with validation
@@ -77,64 +77,110 @@ export const handleLoanSubmit = async (
   totalSteps = LOAN_TOTAL_STEPS,
   setIsSubmitted
 ) => {
-  e.preventDefault();
+  // Prevent default form submission
+  if (e && typeof e.preventDefault === "function") {
+    e.preventDefault();
+  }
+
+  console.log("Loan submission started", { currentStep, totalSteps });
 
   // Validate terms checkbox on step 7
   if (currentStep === totalSteps) {
     if (!formData.agreedToLoanTerms) {
-      // Show error in component
-      setFormData({
-        ...formData,
-        showLoanTermsError: true,
-      });
+      console.log("Terms not agreed");
+      showMessage("Please agree to the loan terms before submitting", "error");
       return;
     }
   }
 
-  showMessage("Submitting...", "info");
-
-  const submissionData = {
-    ...formData,
-    submitted_at: new Date().toISOString(),
-  };
+  showMessage("Submitting loan application...", "info");
 
   try {
-    // Attempt to submit to server
-    const resp = await fetch(LOAN_SUBMIT_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(submissionData),
-    });
+    console.log("Preparing loan data...");
 
-    if (!resp.ok) throw new Error("Server returned " + resp.status);
-    const json = await resp.json();
+    // Prepare loan data for submission
+    const loanData = {
+      memberId: formData.memberId,
+      memberName: formData.memberName,
+      fathersName: formData.fathersName,
+      registeredMobile: formData.registeredMobile,
+      registeredAddress: formData.registeredAddress,
+      monthlyContribution: formData.monthlyContribution,
+      dateOfJoining: formData.dateOfJoining,
+      membershipDuration: formData.membershipDuration,
+      loanRequestDate: formData.loanRequestDate,
+      loanAmount: formData.loanAmount,
+      purposeOfLoan: formData.purposeOfLoan,
+      purposeOfLoanOther: formData.purposeOfLoanOther,
+      emiTenure: formData.emiTenure,
+      whenLoanRequired: formData.whenLoanRequired,
+      paymentTransferMode: formData.paymentTransferMode,
+      upiId: formData.upiId,
+      bankName: formData.bankName,
+      accountNumber: formData.accountNumber,
+      ifscCode: formData.ifscCode,
+      accountType: formData.accountType,
+      guarantor1Name: formData.guarantor1Name,
+      guarantor1MemberId: formData.guarantor1MemberId,
+      guarantor1Mobile: formData.guarantor1Mobile,
+      guarantor1MembershipDuration: formData.guarantor1MembershipDuration,
+      guarantor2Name: formData.guarantor2Name,
+      guarantor2MemberId: formData.guarantor2MemberId,
+      guarantor2Mobile: formData.guarantor2Mobile,
+      guarantor2MembershipDuration: formData.guarantor2MembershipDuration,
+      guarantor2Consent: formData.guarantor2Consent,
+      bankDocumentType: formData.bankDocumentType,
+      bankDocumentPath: formData.bankDocument_file
+        ? formData.bankDocumentPath
+        : null,
+      loanDeclarationAccepted: formData.loanDeclarationAccepted,
+      agreedToLoanTerms: formData.agreedToLoanTerms,
+    };
 
-    if (json.status && json.status === "success") {
-      showMessage("Loan application submitted successfully.", "success");
+    console.log("Sending loan data to backend:", loanData);
+
+    // Submit to backend
+    const response = await loanApi.submitLoan(loanData);
+
+    console.log("Backend response:", response);
+    console.log("Response data success:", response?.data?.success);
+    console.log("Response data:", response?.data);
+
+    // Check if submission was successful
+    const isSuccess =
+      response?.data?.success === true || response?.status === 200;
+    const loanId = response?.data?.data?.loanId;
+
+    if (isSuccess && loanId) {
+      console.log("Loan submitted successfully:", loanId);
+      // Store loan ID in formData before showing thank you page
+      setFormData((prev) => ({
+        ...prev,
+        loanId: loanId,
+      }));
       if (setIsSubmitted) {
-        setTimeout(() => {
-          setIsSubmitted(true);
-        }, 500);
+        setIsSubmitted(true);
+      }
+    } else if (isSuccess) {
+      // Success but no loanId in expected format
+      console.log("Success but unexpected data format:", response?.data);
+      setFormData((prev) => ({
+        ...prev,
+        loanId: response?.data?.data?.loanId || "Processing...",
+      }));
+      if (setIsSubmitted) {
+        setIsSubmitted(true);
       }
     } else {
-      throw new Error(json.message || "Submission failed");
+      console.log("Submission failed - response:", response);
+      throw new Error(response?.data?.message || "Submission failed");
     }
   } catch (err) {
-    // Fallback: Save to localStorage
-    try {
-      const existing = JSON.parse(
-        localStorage.getItem(LOAN_LOCAL_STORAGE_KEY) || "[]"
-      );
-      existing.push(submissionData);
-      localStorage.setItem(LOAN_LOCAL_STORAGE_KEY, JSON.stringify(existing));
-      showMessage("Server unavailable — saved locally.", "error");
-      if (setIsSubmitted) {
-        setTimeout(() => {
-          setIsSubmitted(true);
-        }, 500);
-      }
-    } catch (err2) {
-      showMessage("Submission failed: " + err2.message, "error");
-    }
+    console.error("Error submitting loan:", err);
+    const errorMessage =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to submit loan application. Please try again.";
+    showMessage(errorMessage, "error");
   }
 };

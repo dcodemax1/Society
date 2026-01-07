@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminHeader, AdminSidebar } from "./index";
+import { loanApi } from "../../services/loanApi";
 import {
   FaSearch,
   FaFileAlt,
@@ -9,23 +10,43 @@ import {
 } from "react-icons/fa";
 
 function getStatusBadge(status) {
-  switch (status) {
-    case "pending":
+  const normalizedStatus = status?.toUpperCase() || "";
+
+  switch (normalizedStatus) {
+    case "PENDING":
       return (
         <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold whitespace-nowrap">
           Pending
         </span>
       );
-    case "approved":
+    case "APPROVED":
       return (
         <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold whitespace-nowrap">
           Approved
         </span>
       );
-    case "rejected":
+    case "REJECTED":
       return (
         <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold whitespace-nowrap">
           Rejected
+        </span>
+      );
+    case "DISBURSED":
+      return (
+        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold whitespace-nowrap">
+          Disbursed
+        </span>
+      );
+    case "CLOSED":
+      return (
+        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold whitespace-nowrap">
+          Closed
+        </span>
+      );
+    case "DEFAULTED":
+      return (
+        <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold whitespace-nowrap">
+          Defaulted
         </span>
       );
     default:
@@ -38,167 +59,63 @@ function LoanRequestsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [allLoanRequests, setAllLoanRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const itemsPerPage = 10;
 
-  const allLoanRequests = [
-    {
-      id: "LR-1001",
-      memberId: "987654321008",
-      memberName: "Amit Sharma",
-      mobileNumber: "9876543210",
-      membershipDuration: 12,
-      monthlyContribution: "₹1,000",
-      loanRequest: "₹50,000",
-      tenure: "12 months",
-      requestDate: "20-11-2025",
-      loanRequired: "15-12-2025",
-      status: "pending",
-    },
-    {
-      id: "LR-1002",
-      memberId: "976543210927",
-      memberName: "Meera Patel",
-      mobileNumber: "9765432109",
-      membershipDuration: 24,
-      monthlyContribution: "₹1,500",
-      loanRequest: "₹1,50,000",
-      tenure: "18 months",
-      requestDate: "10-11-2025",
-      loanRequired: "10-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1003",
-      memberId: "965432109804",
-      memberName: "Ravi Kumar",
-      mobileNumber: "9654321098",
-      membershipDuration: 8,
-      monthlyContribution: "₹800",
-      loanRequest: "₹30,000",
-      tenure: "6 months",
-      requestDate: "28-11-2025",
-      loanRequired: "20-12-2025",
-      status: "pending",
-    },
-    {
-      id: "LR-1004",
-      memberId: "954321098711",
-      memberName: "Priya Singh",
-      mobileNumber: "9543210987",
-      membershipDuration: 18,
-      monthlyContribution: "₹1,200",
-      loanRequest: "₹75,000",
-      tenure: "15 months",
-      requestDate: "25-11-2025",
-      loanRequired: "25-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1005",
-      memberId: "943210987615",
-      memberName: "Vikram Das",
-      mobileNumber: "9432109876",
-      membershipDuration: 30,
-      monthlyContribution: "₹2,000",
-      loanRequest: "₹2,00,000",
-      tenure: "24 months",
-      requestDate: "15-11-2025",
-      loanRequired: "15-02-2026",
-      status: "pending",
-    },
-    {
-      id: "LR-1006",
-      memberId: "932109876521",
-      memberName: "Anushka Verma",
-      mobileNumber: "9321098765",
-      membershipDuration: 14,
-      monthlyContribution: "₹1,100",
-      loanRequest: "₹60,000",
-      tenure: "12 months",
-      requestDate: "22-11-2025",
-      loanRequired: "20-12-2025",
-      status: "pending",
-    },
-    {
-      id: "LR-1007",
-      memberId: "921098765401",
-      memberName: "Rajesh Kumar",
-      mobileNumber: "9210987654",
-      membershipDuration: 20,
-      monthlyContribution: "₹1,300",
-      loanRequest: "₹1,00,000",
-      tenure: "18 months",
-      requestDate: "18-11-2025",
-      loanRequired: "18-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1008",
-      memberId: "910987654323",
-      memberName: "Neha Gupta",
-      mobileNumber: "9109876543",
-      membershipDuration: 10,
-      monthlyContribution: "₹900",
-      loanRequest: "₹40,000",
-      tenure: "9 months",
-      requestDate: "12-11-2025",
-      loanRequired: "10-12-2025",
-      status: "rejected",
-    },
-    {
-      id: "LR-1009",
-      memberId: "909876543205",
-      memberName: "Arjun Singh",
-      mobileNumber: "9098765432",
-      membershipDuration: 16,
-      monthlyContribution: "₹1,050",
-      loanRequest: "₹80,000",
-      tenure: "15 months",
-      requestDate: "08-11-2025",
-      loanRequired: "08-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1010",
-      memberId: "898765432113",
-      memberName: "Divya Nair",
-      mobileNumber: "8987654321",
-      membershipDuration: 12,
-      monthlyContribution: "₹1,000",
-      loanRequest: "₹55,000",
-      tenure: "12 months",
-      requestDate: "05-11-2025",
-      loanRequired: "05-12-2025",
-      status: "pending",
-    },
-    {
-      id: "LR-1011",
-      memberId: "887654321018",
-      memberName: "Pooja Desai",
-      mobileNumber: "8876543210",
-      membershipDuration: 22,
-      monthlyContribution: "₹1,400",
-      loanRequest: "₹90,000",
-      tenure: "16 months",
-      requestDate: "03-11-2025",
-      loanRequired: "03-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1012",
-      memberId: "876543210925",
-      memberName: "Suresh Nair",
-      mobileNumber: "8765432109",
-      membershipDuration: 26,
-      monthlyContribution: "₹1,600",
-      loanRequest: "₹1,75,000",
-      tenure: "20 months",
-      requestDate: "28-10-2025",
-      loanRequired: "28-01-2026",
-      status: "pending",
-    },
-  ];
+  useEffect(() => {
+    const loadLoanRequests = async () => {
+      try {
+        setLoading(true);
+        const result = await loanApi.getAllLoans();
+
+        if (result?.data?.success && result?.data?.data) {
+          const loans = (result.data.data || []).map((loan) => ({
+            id: loan.loan_id || Math.random(),
+            memberId: loan.member_id || "N/A",
+            memberName: loan.member_name || "N/A",
+            mobileNumber: loan.registered_mobile || "N/A",
+            membershipDuration:
+              loan.membership_duration !== null &&
+              loan.membership_duration !== undefined
+                ? loan.membership_duration
+                : "N/A",
+            monthlyContribution: loan.monthly_contribution
+              ? `₹${loan.monthly_contribution.toLocaleString("en-IN")}`
+              : "N/A",
+            loanRequest: loan.loan_amount
+              ? `₹${loan.loan_amount.toLocaleString("en-IN")}`
+              : "N/A",
+            tenure: loan.emi_tenure ? `${loan.emi_tenure} months` : "N/A",
+            requestDate: loan.loan_request_date
+              ? new Date(loan.loan_request_date).toLocaleDateString("en-IN")
+              : "N/A",
+            loanRequired: loan.when_loan_required || "N/A",
+            status: loan.status?.toLowerCase() || "pending",
+          }));
+          setAllLoanRequests(loans);
+          setError(null);
+        } else {
+          setAllLoanRequests([]);
+          setError("No loan requests found");
+        }
+      } catch (err) {
+        console.error("Error loading loan requests:", err);
+        if (err.response?.status === 401) {
+          setError("You are not authorized. Please log in as admin.");
+        } else {
+          setError("Failed to load loan requests");
+        }
+        setAllLoanRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLoanRequests();
+  }, []);
 
   // Filter loan requests based on search and status
   const filteredLoanRequests = allLoanRequests.filter((loan) => {
@@ -374,102 +291,114 @@ function LoanRequestsPage() {
 
             {/* Table Section */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs md:text-sm">
-                  <thead>
-                    <tr className="border-b border-green-300 bg-green-50">
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
-                        Member ID
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden sm:table-cell text-xs md:text-sm">
-                        Member Name
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden md:table-cell text-xs md:text-sm">
-                        Mobile Number
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden lg:table-cell text-xs md:text-sm">
-                        Membership Duration
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden xl:table-cell text-xs md:text-sm">
-                        Monthly Contribution
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
-                        Loan Request
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden xl:table-cell text-xs md:text-sm">
-                        Tenure
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden md:table-cell text-xs md:text-sm">
-                        Request Date
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden lg:table-cell text-xs md:text-sm">
-                        Loan Required
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
-                        Status
-                      </th>
-                      <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedLoanRequests.length > 0 ? (
-                      paginatedLoanRequests.map((loan) => (
-                        <tr
-                          key={loan.id}
-                          className="border-b border-gray-200 hover:bg-gray-50 transition"
-                        >
-                          <td className="px-3 md:px-6 py-4 font-medium text-blue-600 text-xs md:text-sm">
-                            {loan.memberId}
-                          </td>
-                          <td className="px-3 md:px-6 py-4 text-gray-700 hidden sm:table-cell text-xs md:text-sm">
-                            {loan.memberName}
-                          </td>
-                          <td className="px-3 md:px-6 py-4 text-gray-600 hidden md:table-cell text-xs md:text-sm">
-                            {loan.mobileNumber}
-                          </td>
-                          <td className="px-1 md:px-2 py-4 text-gray-600 hidden lg:table-cell text-xs md:text-sm">
-                            {loan.membershipDuration} months
-                          </td>
-                          <td className="px-1 md:px-2 py-4 text-gray-600 hidden xl:table-cell text-xs md:text-sm">
-                            {loan.monthlyContribution}
-                          </td>
-                          <td className="px-4 md:px-6 py-4 font-semibold text-gray-800 text-xs md:text-sm">
-                            {loan.loanRequest}
-                          </td>
-                          <td className="px-3 md:px-5 py-4 text-gray-600 hidden xl:table-cell text-xs md:text-sm">
-                            {loan.tenure}
-                          </td>
-                          <td className="px-3 md:px-5 py-4 text-gray-700 hidden md:table-cell text-xs md:text-sm">
-                            {loan.requestDate}
-                          </td>
-                          <td className="px-3 md:px-6 py-4 text-gray-600 text-xs md:text-sm hidden lg:table-cell">
-                            {loan.loanRequired}
-                          </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm">
-                            {getStatusBadge(loan.status)}
-                          </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm">
-                            <button className="bg-green-600 text-white hover:bg-green-700 font-medium text-xs md:text-sm px-3 py-1 rounded transition">
-                              View
-                            </button>
+              {loading ? (
+                <div className="flex justify-center items-center h-96">
+                  <div className="text-gray-500">Loading loan requests...</div>
+                </div>
+              ) : error ? (
+                <div className="flex justify-center items-center h-96">
+                  <div className="text-red-500">{error}</div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs md:text-sm">
+                    <thead>
+                      <tr className="border-b border-green-300 bg-green-50">
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
+                          Member ID
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden sm:table-cell text-xs md:text-sm">
+                          Member Name
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden md:table-cell text-xs md:text-sm">
+                          Mobile Number
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden lg:table-cell text-xs md:text-sm">
+                          Membership Duration
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden xl:table-cell text-xs md:text-sm">
+                          Monthly Contribution
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
+                          Loan Request
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden xl:table-cell text-xs md:text-sm">
+                          Tenure
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden md:table-cell text-xs md:text-sm">
+                          Request Date
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 hidden lg:table-cell text-xs md:text-sm">
+                          Loan Required
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
+                          Status
+                        </th>
+                        <th className="px-3 md:px-6 py-4 text-left font-semibold text-green-700 text-xs md:text-sm">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedLoanRequests.length > 0 ? (
+                        paginatedLoanRequests.map((loan) => (
+                          <tr
+                            key={loan.id}
+                            className="border-b border-gray-200 hover:bg-gray-50 transition"
+                          >
+                            <td className="px-3 md:px-6 py-4 font-medium text-blue-600 text-xs md:text-sm">
+                              {loan.memberId}
+                            </td>
+                            <td className="px-3 md:px-6 py-4 text-gray-700 hidden sm:table-cell text-xs md:text-sm">
+                              {loan.memberName}
+                            </td>
+                            <td className="px-3 md:px-6 py-4 text-gray-600 hidden md:table-cell text-xs md:text-sm">
+                              {loan.mobileNumber}
+                            </td>
+                            <td className="px-1 md:px-2 py-4 text-gray-600 hidden lg:table-cell text-xs md:text-sm">
+                              {loan.membershipDuration === "N/A"
+                                ? "N/A"
+                                : `${loan.membershipDuration} months`}
+                            </td>
+                            <td className="px-1 md:px-2 py-4 text-gray-600 hidden xl:table-cell text-xs md:text-sm">
+                              {loan.monthlyContribution}
+                            </td>
+                            <td className="px-4 md:px-6 py-4 font-semibold text-gray-800 text-xs md:text-sm">
+                              {loan.loanRequest}
+                            </td>
+                            <td className="px-3 md:px-5 py-4 text-gray-600 hidden xl:table-cell text-xs md:text-sm">
+                              {loan.tenure}
+                            </td>
+                            <td className="px-3 md:px-5 py-4 text-gray-700 hidden md:table-cell text-xs md:text-sm">
+                              {loan.requestDate}
+                            </td>
+                            <td className="px-3 md:px-6 py-4 text-gray-600 text-xs md:text-sm hidden lg:table-cell">
+                              {loan.loanRequired}
+                            </td>
+                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm">
+                              {getStatusBadge(loan.status)}
+                            </td>
+                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm">
+                              <button className="bg-green-600 text-white hover:bg-green-700 font-medium text-xs md:text-sm px-3 py-1 rounded transition">
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="12"
+                            className="px-6 py-8 text-center text-gray-500"
+                          >
+                            No loan requests found
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="12"
-                          className="px-6 py-8 text-center text-gray-500"
-                        >
-                          No loan requests found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {/* Footer */}
               <div className="px-4 md:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">

@@ -13,24 +13,28 @@ import { tokenService } from "../../services/tokenService";
 
 function AdminLogin({ onClose }) {
   const navigate = useNavigate();
+
+  // User type selection
+  const [userType, setUserType] = useState(null); // null: selection, "member", "admin"
+
   // Step management
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: Password, 4: Login
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // OTP inputs
+  // OTP inputs (for member flow)
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
-  // Password inputs
+  // Password inputs (for member signup)
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Login inputs
+  // Login inputs (for both flows)
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -147,12 +151,34 @@ function AdminLogin({ onClose }) {
     setIsLoading(true);
     try {
       const response = await authApi.login(loginEmail, loginPassword);
+
+      // Check if password needs to be set first (for admin with no password)
+      if (response?.data?.data?.requiresPasswordSetup) {
+        setSuccess("Email verified! Please set your password.");
+        setEmail(loginEmail); // Store email for password setup
+        setStep(3); // Move to Set Password step
+        setTimeout(() => setSuccess(""), 3000);
+        setIsLoading(false);
+        return;
+      }
+
       if (
         response?.data?.status === "success" &&
         response?.data?.data?.accessToken
       ) {
         tokenService.setToken(response.data.data.accessToken);
-        window.location.href = "/member-dashboard";
+        // Store user role for route protection
+        const userRole =
+          response?.data?.data?.user?.role || response?.data?.data?.role;
+        if (userRole) {
+          tokenService.setUserRole(userRole);
+        }
+        // Redirect based on role
+        if (userRole === "admin") {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/member-dashboard";
+        }
       }
     } catch (err) {
       setError(

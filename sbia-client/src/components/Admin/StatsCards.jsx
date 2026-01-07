@@ -1,35 +1,81 @@
-import React from "react";
-import { FaUsers, FaCheckCircle, FaFileAlt, FaHandshake } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { FaUsers, FaCheckCircle, FaFileAlt, FaClock } from "react-icons/fa";
+import memberApi from "../../services/memberApi";
+import api from "../../services/loanApi";
 
 function StatsCards() {
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    activeMembers: 0,
+    totalLoanRequests: 0,
+    pendingLoans: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch members
+        const membersResult = await memberApi.fetchAllMembers();
+        const totalMembers = (membersResult?.data || []).length;
+        const activeMembers = (membersResult?.data || []).filter(
+          (m) => m.status === "ACTIVE"
+        ).length;
+
+        // Fetch loans
+        const loansResponse = await api.get("/loans");
+        const loans = loansResponse?.data?.data || [];
+        const totalLoanRequests = loans.length;
+        const pendingLoans = loans.filter(
+          (l) => l.status?.toUpperCase() === "PENDING"
+        ).length;
+
+        setStats({
+          totalMembers,
+          activeMembers,
+          totalLoanRequests,
+          pendingLoans,
+        });
+      } catch (error) {
+        console.error("Error loading stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
+
   const dashboardStats = [
     {
       label: "Total Members",
-      value: "3",
+      value: stats.totalMembers.toString(),
       color: "bg-blue-50",
       iconColor: "text-blue-600",
       icon: <FaUsers />,
     },
     {
       label: "Active Members",
-      value: "2",
+      value: stats.activeMembers.toString(),
       color: "bg-orange-50",
       iconColor: "text-orange-600",
       icon: <FaCheckCircle />,
     },
     {
       label: "Total Loan Requests",
-      value: "3",
+      value: stats.totalLoanRequests.toString(),
       color: "bg-indigo-50",
       iconColor: "text-indigo-600",
       icon: <FaFileAlt />,
     },
     {
-      label: "Approved Loans",
-      value: "1",
-      color: "bg-teal-50",
-      iconColor: "text-teal-600",
-      icon: <FaHandshake />,
+      label: "Pending Loans",
+      value: stats.pendingLoans.toString(),
+      color: "bg-yellow-50",
+      iconColor: "text-yellow-600",
+      icon: <FaClock />,
     },
   ];
 

@@ -1,107 +1,113 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { loanApi } from "../../services/loanApi";
 
 function getStatusBadge(status) {
-  switch (status) {
-    case "ACTIVE":
-      return (
-        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium whitespace-nowrap">
-          ACTIVE
-        </span>
-      );
-    case "INACTIVE":
-      return (
-        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium whitespace-nowrap">
-          INACTIVE
-        </span>
-      );
-    case "pending":
+  const normalizedStatus = status?.toUpperCase() || "";
+
+  switch (normalizedStatus) {
+    case "PENDING":
       return (
         <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold whitespace-nowrap">
-          pending
+          PENDING
         </span>
       );
-    case "approved":
+    case "APPROVED":
       return (
         <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold whitespace-nowrap">
-          approved
+          APPROVED
+        </span>
+      );
+    case "REJECTED":
+      return (
+        <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold whitespace-nowrap">
+          REJECTED
+        </span>
+      );
+    case "DISBURSED":
+      return (
+        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold whitespace-nowrap">
+          DISBURSED
+        </span>
+      );
+    case "CLOSED":
+      return (
+        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-semibold whitespace-nowrap">
+          CLOSED
+        </span>
+      );
+    case "DEFAULTED":
+      return (
+        <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold whitespace-nowrap">
+          DEFAULTED
         </span>
       );
     default:
-      return null;
+      return (
+        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-semibold whitespace-nowrap">
+          {normalizedStatus || "UNKNOWN"}
+        </span>
+      );
   }
 }
 
 function LoanRequests() {
   const navigate = useNavigate();
+  const [loanRequests, setLoanRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const loanRequests = [
-    {
-      id: "LR-1001",
-      memberId: "987654321008",
-      memberName: "Amit Sharma",
-      mobileNumber: "9876543210",
-      membershipDuration: 12,
-      monthlyContribution: "₹1,000",
-      loanRequest: "₹50,000",
-      tenure: "12 months",
-      requestDate: "20-11-2025",
-      loanRequired: "15-12-2025",
-      status: "pending",
-    },
-    {
-      id: "LR-1002",
-      memberId: "976543210927",
-      memberName: "Meera Patel",
-      mobileNumber: "9765432109",
-      membershipDuration: 24,
-      monthlyContribution: "₹1,500",
-      loanRequest: "₹1,50,000",
-      tenure: "18 months",
-      requestDate: "10-11-2025",
-      loanRequired: "10-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1003",
-      memberId: "965432109804",
-      memberName: "Ravi Kumar",
-      mobileNumber: "9654321098",
-      membershipDuration: 8,
-      monthlyContribution: "₹800",
-      loanRequest: "₹30,000",
-      tenure: "6 months",
-      requestDate: "28-11-2025",
-      loanRequired: "20-12-2025",
-      status: "pending",
-    },
-    {
-      id: "LR-1004",
-      memberId: "954321098711",
-      memberName: "Priya Singh",
-      mobileNumber: "9543210987",
-      membershipDuration: 18,
-      monthlyContribution: "₹1,200",
-      loanRequest: "₹75,000",
-      tenure: "15 months",
-      requestDate: "25-11-2025",
-      loanRequired: "25-01-2026",
-      status: "approved",
-    },
-    {
-      id: "LR-1005",
-      memberId: "943210987615",
-      memberName: "Vikram Das",
-      mobileNumber: "9432109876",
-      membershipDuration: 30,
-      monthlyContribution: "₹2,000",
-      loanRequest: "₹2,00,000",
-      tenure: "24 months",
-      requestDate: "15-11-2025",
-      loanRequired: "15-02-2026",
-      status: "pending",
-    },
-  ];
+  useEffect(() => {
+    const loadLoanRequests = async () => {
+      try {
+        setLoading(true);
+        const result = await loanApi.getAllLoans();
+
+        console.log("Loan API response:", result);
+        console.log("Response data:", result?.data);
+
+        if (result?.data?.success && result?.data?.data) {
+          console.log("Loans received:", result.data.data);
+          // Sort by loan_request_date (newest first) and take only 5
+          const sorted = (result.data.data || [])
+            .sort((a, b) => {
+              const dateA = new Date(a.loan_request_date);
+              const dateB = new Date(b.loan_request_date);
+              return dateB - dateA;
+            })
+            .slice(0, 5)
+            .map((loan) => ({
+              id: loan.loan_id || Math.random(),
+              memberId: loan.member_id || "N/A",
+              memberName: loan.member_name || "N/A",
+              loanRequest: loan.loan_amount
+                ? `₹${loan.loan_amount.toLocaleString("en-IN")}`
+                : "N/A",
+              loanRequired: loan.when_loan_required || "N/A",
+              status: loan.status?.toLowerCase() || "pending",
+            }));
+
+          console.log("Mapped loans:", sorted);
+          setLoanRequests(sorted);
+        } else {
+          console.log("No success or data in response");
+          setLoanRequests([]);
+        }
+      } catch (error) {
+        console.error("Error loading loan requests:", error);
+        if (error.response?.status === 401) {
+          setError("You are not authorized. Please log in as admin.");
+        } else {
+          setError(error.message || "Failed to load loan requests");
+        }
+        setLoanRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLoanRequests();
+  }, []);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 h-full flex flex-col">
@@ -122,57 +128,65 @@ function LoanRequests() {
       </div>
 
       <div className="overflow-x-auto flex-1">
-        <table className="w-full text-xs md:text-sm">
-          <thead>
-            <tr className="border-b border-green-300 bg-green-50">
-              <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700">
-                Member ID
-              </th>
-              <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700 hidden sm:table-cell">
-                Member Name
-              </th>
-              <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700">
-                Loan Request
-              </th>
-              <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700 hidden md:table-cell">
-                Request Date
-              </th>
-              <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700 hidden lg:table-cell">
-                Loan Required
-              </th>
-              <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loanRequests.map((loan) => (
-              <tr
-                key={loan.id}
-                className="border-b border-gray-200 hover:bg-gray-50 transition"
-              >
-                <td className="px-3 md:px-6 py-3 font-medium text-blue-600 text-xs md:text-sm">
-                  {loan.memberId}
-                </td>
-                <td className="px-3 md:px-6 py-3 text-gray-700 hidden sm:table-cell text-xs md:text-sm">
-                  {loan.memberName}
-                </td>
-                <td className="px-3 md:px-6 py-3 font-semibold text-gray-800 text-xs md:text-sm">
-                  {loan.loanRequest}
-                </td>
-                <td className="px-3 md:px-6 py-3 text-gray-700 hidden md:table-cell text-xs md:text-sm">
-                  {loan.requestDate}
-                </td>
-                <td className="px-3 md:px-6 py-3 text-gray-600 text-xs md:text-sm hidden lg:table-cell">
-                  {loan.loanRequired}
-                </td>
-                <td className="px-3 md:px-6 py-7">
-                  {getStatusBadge(loan.status)}
-                </td>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-500">Loading loan requests...</div>
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-red-500">{error}</div>
+          </div>
+        ) : loanRequests.length === 0 ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-500">No loan requests found</div>
+          </div>
+        ) : (
+          <table className="w-full text-xs md:text-sm">
+            <thead>
+              <tr className="border-b border-green-300 bg-green-50">
+                <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700">
+                  Member ID
+                </th>
+                <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700 hidden sm:table-cell">
+                  Member Name
+                </th>
+                <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700">
+                  Loan Request
+                </th>
+                <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700 hidden lg:table-cell">
+                  Loan Required
+                </th>
+                <th className="px-3 md:px-6 py-3 text-left font-semibold text-green-700">
+                  Status
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loanRequests.map((loan) => (
+                <tr
+                  key={loan.id}
+                  className="border-b border-gray-200 hover:bg-gray-50 transition"
+                >
+                  <td className="px-3 md:px-6 py-3 font-medium text-blue-600 text-xs md:text-sm">
+                    {loan.memberId}
+                  </td>
+                  <td className="px-3 md:px-6 py-3 text-gray-700 hidden sm:table-cell text-xs md:text-sm">
+                    {loan.memberName}
+                  </td>
+                  <td className="px-3 md:px-6 py-3 font-semibold text-gray-800 text-xs md:text-sm">
+                    {loan.loanRequest}
+                  </td>
+                  <td className="px-3 md:px-6 py-3 text-gray-600 text-xs md:text-sm hidden lg:table-cell">
+                    {loan.loanRequired}
+                  </td>
+                  <td className="px-3 md:px-6 py-7">
+                    {getStatusBadge(loan.status)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="mt-4 flex justify-between items-center">

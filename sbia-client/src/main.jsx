@@ -9,6 +9,8 @@ import BankFormPage from "./pages/BankFormPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import MemberDashboard from "./pages/MemberDashboard.jsx";
+import AdminProtectedRoute from "./components/AdminProtectedRoute.jsx";
+import MemberProtectedRoute from "./components/MemberProtectedRoute.jsx";
 import {
   LoanRequestsPage,
   MembersPage,
@@ -27,12 +29,54 @@ createRoot(document.getElementById("root")).render(
         <Route path="/member-form" element={<MemberFormPage />} />
         <Route path="/loan-application" element={<LoanFormPage />} />
         <Route path="/bank-form" element={<BankFormPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/member-dashboard" element={<MemberDashboard />} />
-        <Route path="/loan-requests" element={<LoanRequestsPage />} />
-        <Route path="/members" element={<MembersPage />} />
-        <Route path="/referral" element={<ReferralPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/member-dashboard"
+          element={
+            <MemberProtectedRoute>
+              <MemberDashboard />
+            </MemberProtectedRoute>
+          }
+        />
+        <Route
+          path="/loan-requests"
+          element={
+            <AdminProtectedRoute>
+              <LoanRequestsPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/members"
+          element={
+            <AdminProtectedRoute>
+              <MembersPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/referral"
+          element={
+            <AdminProtectedRoute>
+              <ReferralPage />
+            </AdminProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   </StrictMode>

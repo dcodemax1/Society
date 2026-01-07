@@ -91,17 +91,26 @@ function Guarantor2({ formData, onChange, modalErrors = {} }) {
       } else {
         setNotification({
           show: true,
-          message:
-            result.error || "Member not found. Please enter details manually.",
+          message: "Member does not exist!",
           type: "error",
+        });
+        onChange({ target: { name: "guarantor2Name", value: "" } });
+        onChange({ target: { name: "guarantor2MemberId", value: "" } });
+        onChange({ target: { name: "guarantor2Mobile", value: "" } });
+        onChange({
+          target: { name: "guarantor2MembershipDuration", value: "" },
         });
       }
     } catch (error) {
       setNotification({
         show: true,
-        message: "Error searching member: " + error.message,
+        message: "Member does not exist!",
         type: "error",
       });
+      onChange({ target: { name: "guarantor2Name", value: "" } });
+      onChange({ target: { name: "guarantor2MemberId", value: "" } });
+      onChange({ target: { name: "guarantor2Mobile", value: "" } });
+      onChange({ target: { name: "guarantor2MembershipDuration", value: "" } });
     } finally {
       setIsLoading(false);
     }

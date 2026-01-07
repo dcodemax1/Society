@@ -182,7 +182,7 @@ function SubmissionSuccess({ formData }) {
 
       // Generate PDF blob with oklch color fixes
       const pdfBlob = await generatePDFBlobWithOklchFix(bankFormRef.current);
-      const pdfFileName = `BankForm-${memberId}.pdf`;
+      const pdfFileName = `SBIA WITH ${memberId}.pdf`;
       const pdfFile = new File([pdfBlob], pdfFileName, {
         type: "application/pdf",
       });

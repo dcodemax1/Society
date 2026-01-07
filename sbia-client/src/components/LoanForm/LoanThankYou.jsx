@@ -6,6 +6,9 @@
 import React from "react";
 
 function LoanThankYou({ formData, onNewApplication }) {
+  // Get loanId from formData or show placeholder
+  const loanId = formData?.loanId || "Processing...";
+
   return (
     <>
       {/* Success Animation - Checkmark Circle */}

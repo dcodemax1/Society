@@ -98,7 +98,34 @@ export const fetchMemberById = async (id) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch member: ${response.status}`);
+      throw new Error(`Member does not exist!`);
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data: data.data,
+      message: data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+};
+
+export const getReferrals = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/members/referrals/all`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch referrals: ${response.status}`);
     }
 
     const data = await response.json();
@@ -119,4 +146,5 @@ export default {
   submitMemberForm,
   fetchAllMembers,
   fetchMemberById,
+  getReferrals,
 };

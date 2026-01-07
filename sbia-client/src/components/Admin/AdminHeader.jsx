@@ -1,12 +1,36 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiMenu } from "react-icons/fi";
 import { MdLogout } from "react-icons/md";
 import { FaUsers, FaHandshake } from "react-icons/fa";
 import { IoNotifications } from "react-icons/io5";
+import { authApi } from "../../services/authApi";
+import { tokenService } from "../../services/tokenService";
 
 function AdminHeader({ sidebarOpen, setSidebarOpen }) {
+  const navigate = useNavigate();
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("Admin User");
+  const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
+
+  // Fetch admin info on mount
+  useEffect(() => {
+    const fetchAdminInfo = async () => {
+      try {
+        const response = await authApi.getMe();
+        if (response?.data?.success && response?.data?.data?.email) {
+          setAdminEmail(response.data.data.email);
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin info:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminInfo();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -34,6 +58,23 @@ function AdminHeader({ sidebarOpen, setSidebarOpen }) {
       document.body.style.overflow = "unset";
     };
   }, [sidebarOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      // Clear tokens and redirect
+      tokenService.clearTokens();
+      navigate("/");
+    }
+  };
+
+  // Get first letter of email for avatar
+  const getAvatarLetter = () => {
+    return adminEmail ? adminEmail.charAt(0).toUpperCase() : "A";
+  };
 
   return (
     <div className="bg-white shadow-sm p-4 md:p-6 flex justify-between items-center w-full sticky top-0 z-30">
@@ -67,13 +108,16 @@ function AdminHeader({ sidebarOpen, setSidebarOpen }) {
         {/* Admin Name and Profile - Desktop */}
         <div className="relative hidden md:flex items-center gap-3">
           <div className="text-right">
-            <p className="text-sm font-semibold text-gray-800">Admin User</p>
+            <p className="text-sm font-semibold text-gray-800">Admin</p>
+            <p className="text-xs text-gray-500">{adminEmail}</p>
           </div>
           <button
             onClick={() => setProfileDropdown(!profileDropdown)}
             className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center hover:bg-green-200 transition shrink-0"
           >
-            <span className="text-green-700 font-bold text-lg">A</span>
+            <span className="text-green-700 font-bold text-lg">
+              {getAvatarLetter()}
+            </span>
           </button>
 
           {/* Profile Dropdown - Desktop */}
@@ -83,16 +127,13 @@ function AdminHeader({ sidebarOpen, setSidebarOpen }) {
               className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
             >
               <div className="p-4 border-b border-gray-200">
-                <p className="text-sm font-semibold text-gray-800">
-                  Admin User
-                </p>
-                <p className="text-xs text-gray-500">admin@example.com</p>
+                <p className="text-sm font-semibold text-gray-800">Admin</p>
+                <p className="text-xs text-gray-500">{adminEmail}</p>
               </div>
-              <button className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm flex items-center gap-2 transition">
-                <FaUsers size={16} />
-                View Profile
-              </button>
-              <button className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2 transition border-t border-gray-200 font-medium">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2 transition border-t border-gray-200 font-medium"
+              >
                 <MdLogout size={16} />
                 Logout
               </button>
@@ -106,23 +147,22 @@ function AdminHeader({ sidebarOpen, setSidebarOpen }) {
             onClick={() => setProfileDropdown(!profileDropdown)}
             className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center hover:bg-green-200 transition shrink-0"
           >
-            <span className="text-green-700 font-bold text-lg">A</span>
+            <span className="text-green-700 font-bold text-lg">
+              {getAvatarLetter()}
+            </span>
           </button>
 
           {/* Profile Dropdown - Mobile */}
           {profileDropdown && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
               <div className="p-4 border-b border-gray-200">
-                <p className="text-sm font-semibold text-gray-800">
-                  Admin User
-                </p>
-                <p className="text-xs text-gray-500">admin@example.com</p>
+                <p className="text-sm font-semibold text-gray-800">Admin</p>
+                <p className="text-xs text-gray-500">{adminEmail}</p>
               </div>
-              <button className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm flex items-center gap-2 transition">
-                <FaUsers size={16} />
-                View Profile
-              </button>
-              <button className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2 transition border-t border-gray-200 font-medium">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2 transition border-t border-gray-200 font-medium"
+              >
                 <MdLogout size={16} />
                 Logout
               </button>

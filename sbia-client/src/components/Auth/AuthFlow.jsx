@@ -5,6 +5,7 @@ import OTPVerification from "./OTPVerification";
 import SetPassword from "./SetPassword";
 import Login from "./Login";
 import { authApi } from "../../services/authApi";
+import { tokenService } from "../../services/tokenService";
 
 /**
  * Multi-step authentication flow:
@@ -12,7 +13,7 @@ import { authApi } from "../../services/authApi";
  * Step 2: OTP Verification (6 digits) -> calls POST /auth/verify-otp
  * Step 3: Set Password -> calls POST /auth/set-password
  * Step 4: Login -> calls POST /auth/login
- * Step 5: Redirect to Dashboard
+ * Step 5: Redirect to Dashboard based on role
  */
 
 function AuthFlow() {
@@ -44,9 +45,14 @@ function AuthFlow() {
     setStep(4); // Move to Login
   };
 
-  // Step 4: Login and redirect to Dashboard
+  // Step 4: Login and redirect to Dashboard based on role
   const handleLoginSuccess = () => {
-    navigate("/member-dashboard");
+    const userRole = tokenService.getUserRole();
+    if (userRole === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/member-dashboard");
+    }
   };
 
   // Handle back button to return to signup (email step)
